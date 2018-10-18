@@ -1398,7 +1398,7 @@ function sendShareInvitationButton(recipientID) {
                     image_aspect_ratio: "square",
                     elements: [{     
                         title: "Challenge Your Friends!",
-                        subtitle: "Climb the global leaderboard as your friends and their friends by malaria nets!",
+                        subtitle: "Climb the global leaderboard when your friends and their friends buy malaria nets!",
                         image_url: "http://www.projectedgames.com/amf/amf_logo.png",
                         buttons: [{
                             type: "element_share",
