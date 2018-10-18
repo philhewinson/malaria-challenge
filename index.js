@@ -136,6 +136,10 @@ app.get('/webhook', function(req, res) {
 
 function isNumber(obj) { return !isNaN(parseFloat(obj)) }
 
+function isInt(n) {
+    return n % 1 === 0;
+ }
+
 function isEmoji(str) {
     
     var ranges = [
