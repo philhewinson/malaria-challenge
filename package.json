@@ -1,0 +1,45 @@
+{
+  "name": "malaria-challenge",
+  "version": "1.0.0",
+  "description": "Malaria Challenge",
+  "engines": {
+    "node": "6.11.1"
+  },
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "cashbot": "^0.2.1",
+    "cool-ascii-faces": "1.3.4",
+    "ejs": "2.4.1",
+    "express": "4.13.3",
+    "fusioncharts": "^3.12.0",
+    "moment": "^2.18.1",
+    "mongo": "^0.1.0",
+    "mongo-export": "^0.3.1",
+    "mongoexport-wrapper": "^1.0.1",
+    "mongojs": "^2.4.0",
+    "nodemailer": "^4.0.1",
+    "pg": "4.x",
+    "request": "^2.81.0",
+    "rest": "^2.0.0",
+    "sendmail": "^1.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/heroku/node-js-getting-started.git"
+  },
+  "keywords": [
+    "node",
+    "heroku",
+    "express"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/heroku/node-js-getting-started/issues"
+  },
+  "homepage": "https://github.com/heroku/node-js-getting-started#readme",
+  "author": ""
+}
