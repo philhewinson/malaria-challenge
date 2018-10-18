@@ -3,6 +3,8 @@ var app = express();
 var bodyParser = require('body-parser');
 var request = require('request');
 
+
+
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -1821,7 +1823,7 @@ function getResponseToVideoInput(userProfile) {
             text = "There's beautiful imagery in that video.  Really nice!";
             break;
         case 5:
-            text = "Wow, I've never seen a video like that before!;
+            text = "Wow, I've never seen a video like that before!";
             break;
             
     }
