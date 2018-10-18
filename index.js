@@ -640,7 +640,7 @@ function getValidUserProfile(recipientID, callback) {
     var needToGetUserProfileFromFacebook = false;
 
     mongodb.users.find({ "user": parseInt(recipientID) }, 
-    { "first_name": 1, "last_name": 1, "profile_pic": 1, "locale": 1, "timezone": 1, "gender": 1, "is_payment_enabled": 1, "last_ad_referral": 1, _id: 0 },
+    { "first_name": 1, "last_name": 1, "profile_pic": 1, "locale": 1, "timezone": 1, "gender": 1, _id: 0 },
     function(err, mongoUserResults){
 
         if (mongoUserResults.length > 0 ) {
@@ -651,9 +651,8 @@ function getValidUserProfile(recipientID, callback) {
                 profile_pic:mongoUserResults[0].profile_pic,
                 locale:mongoUserResults[0].locale,
                 timezone:mongoUserResults[0].timezone,
-                gender:mongoUserResults[0].gender,
-                is_payment_enabled:mongoUserResults[0].is_payment_enabled,
-                last_ad_referral:mongoUserResults[0].last_ad_referral};
+                gender:mongoUserResults[0].gender
+            };
 
             if (isUserProfileValid(validUserProfile) == true) {
 
@@ -676,7 +675,7 @@ function getValidUserProfile(recipientID, callback) {
         if (needToGetUserProfileFromFacebook == true) {
 
             var profileInfoRequest = "https://graph.facebook.com/v2.6/" + recipientID +
-                "?fields=first_name,last_name,profile_pic,locale,timezone,gender,is_payment_enabled,last_ad_referral&access_token=" + PAGE_ACCESS_TOKEN;
+                "?fields=first_name,last_name,profile_pic,locale,timezone,gender&access_token=" + PAGE_ACCESS_TOKEN;
             request(profileInfoRequest, function(error, response, body) {
 
                 var bodyJSON = null;
@@ -719,14 +718,13 @@ function getValidUserProfile(recipientID, callback) {
 
                     if (bodyJSON != null) {
 
-                        userProfile = {first_name:bodyJSON.first_name,
+                        userProfile = { first_name:bodyJSON.first_name,
                                         last_name:bodyJSON.last_name,
                                         profile_pic:bodyJSON.profile_pic,
                                         locale:bodyJSON.locale,
                                         timezone:bodyJSON.timezone,
-                                        gender:bodyJSON.gender,
-                                        is_payment_enabled:bodyJSON.is_payment_enabled,
-                                        last_ad_referral:bodyJSON.last_ad_referral};
+                                        gender:bodyJSON.gender
+                                    };
 
                     }
 
@@ -741,8 +739,7 @@ function getValidUserProfile(recipientID, callback) {
                                                   "profile_pic": userProfile.profile_pic,
                                                   "locale": userProfile.locale,
                                                   "timezone": parseInt(userProfile.timezone),
-                                                  "gender": userProfile.gender,
-                                                  "is_payment_enabled": userProfile.is_payment_enabled } }
+                                                  "gender": userProfile.gender } }
                             },
                             function(err, results){
                                 if (err) { console.error("MongoDB error: " + err); }
@@ -767,9 +764,8 @@ function getValidUserProfile(recipientID, callback) {
                                 profile_pic:null,
                                 locale:null,
                                 timezone:null,
-                                gender:null,
-                                is_payment_enabled:null,
-                                last_ad_referral:null};
+                                gender:null
+                            };
                         }
             
                         callback(userProfile);
@@ -1234,7 +1230,7 @@ function sendIntroText(recipientID, userProfile, inviter) {
         update: { $setOnInsert: { "user": parseInt(recipientID), "bought_net": false, "referred_by": inviterForQuery, 
                                 "first_name": userProfile.first_name, "last_name": userProfile.last_name,
                                 "profile_pic": userProfile.profile_pic, "locale": userProfile.locale, "timezone": parseInt(userProfile.timezone),
-                                "gender": userProfile.gender, "is_payment_enabled": userProfile.is_payment_enabled, "num_starts": 1,
+                                "gender": userProfile.gender, "num_starts": 1,
                                 "status": "active", "time_joined": currentTimestamp,
                                 "num_messages": 0, "num_message_attachments": 0,
                                 "num_referrals" : 0, "num_recursive_referrals" : 0 } },
