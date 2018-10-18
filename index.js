@@ -508,7 +508,7 @@ app.post('/webhook', function (req, res) {
     var data = req.body;
 
     // Make sure this is a page subscription
-    if (data != null && data.object === 'page') {
+    if (data != null && data.object === 'page' && data.entry != null) {
         
         // Iterate over each entry - there may be multiple if batched
         data.entry.forEach(function(entry) {
@@ -516,107 +516,110 @@ app.post('/webhook', function (req, res) {
             var pageID = entry.id;
             var timeOfEvent = entry.time;
 
-            // Iterate over each messaging event
-            entry.messaging.forEach(function(event) {
+            if (entry.messaging != null) {
 
-                if ((event.message && !event.message.is_echo) || event.postback) {
-                    
-                    var senderID = event.sender.id;
-                    
-                    if (SLEEP_MODE == true) {
+                // Iterate over each messaging event
+                entry.messaging.forEach(function(event) {
+
+                    if ((event.message && !event.message.is_echo) || event.postback) {
                         
-                        // In sleep mode, so just return a standard message, but don't process any further! ...
-                        sendMessage(event.sender.id, [200, getSleepModeText()], null, true);
+                        var senderID = event.sender.id;
                         
-                    } else {
+                        if (SLEEP_MODE == true) {
+                            
+                            // In sleep mode, so just return a standard message, but don't process any further! ...
+                            sendMessage(event.sender.id, [200, getSleepModeText()], null, true);
+                            
+                        } else {
 
-                        // Not in sleep mode, so continue as normal! ...
+                            // Not in sleep mode, so continue as normal! ...
 
-                        mongodb.logs.insert(
-                            {
-                                "timestamp": new Date().getTime(),
-                                "user": parseInt(senderID),
-                                "type": "receive",
-                                "log": JSON.stringify(event),
-                            },
-                            function(err, results){
-                                if (err) { console.error("MongoDB error: " + err); }
-                            }    
-                        );
-                        //console.log("Event received from Read API: " + JSON.stringify(event));
+                            mongodb.logs.insert(
+                                {
+                                    "timestamp": new Date().getTime(),
+                                    "user": parseInt(senderID),
+                                    "type": "receive",
+                                    "log": JSON.stringify(event),
+                                },
+                                function(err, results){
+                                    if (err) { console.error("MongoDB error: " + err); }
+                                }    
+                            );
+                            //console.log("Event received from Read API: " + JSON.stringify(event));
 
 
-                        // Log the IP address too (only if it's me)
-                        if (parseInt(senderID) == myUserID) {
+                            // Log the IP address too (only if it's me)
+                            if (parseInt(senderID) == myUserID) {
 
-                            var ipAddressRequest = "http://ip.changeip.com";
-                            request(ipAddressRequest, function(error, response, body) {
-                                mongodb.logs.insert(
-                                    {
-                                        "timestamp": new Date().getTime(),
-                                        "user": parseInt(senderID),
-                                        "type": "ip",
-                                        "log": "Server IP Address: " + body,
-                                    },
-                                    function(err, results){
-                                        if (err) { console.error("MongoDB error: " + err); }
-                                    }    
-                                );
-                                //console.log("Server IP Address: " + body);
-                            }).on('error', function(e) {
-                                
-                                // Catch error
-            
-                                var errorMessage = 'Error on http://ip.changeip.com: ' + e.message;
-                                console.error(errorMessage);
-                                logErrorInMongo(errorMessage, senderID);
-            
+                                var ipAddressRequest = "http://ip.changeip.com";
+                                request(ipAddressRequest, function(error, response, body) {
+                                    mongodb.logs.insert(
+                                        {
+                                            "timestamp": new Date().getTime(),
+                                            "user": parseInt(senderID),
+                                            "type": "ip",
+                                            "log": "Server IP Address: " + body,
+                                        },
+                                        function(err, results){
+                                            if (err) { console.error("MongoDB error: " + err); }
+                                        }    
+                                    );
+                                    //console.log("Server IP Address: " + body);
+                                }).on('error', function(e) {
+                                    
+                                    // Catch error
+                
+                                    var errorMessage = 'Error on http://ip.changeip.com: ' + e.message;
+                                    console.error(errorMessage);
+                                    logErrorInMongo(errorMessage, senderID);
+                
+                                });
+
+                            }
+                        
+                            sendTypingIndicator(senderID, true);
+
+                            // Get the user's profile information (from the user's table, otherwise from graph.facebook.com)
+                            getValidUserProfile(senderID, function(validUserProfile) {
+
+                                if (event.message) {
+                                    receivedMessage(event, validUserProfile);
+                                } else if (event.postback) {
+                                    receivedPostback(event, validUserProfile);
+                                }
+
                             });
 
                         }
-                    
-                        sendTypingIndicator(senderID, true);
-
-                        // Get the user's profile information (from the user's table, otherwise from graph.facebook.com)
-                        getValidUserProfile(senderID, function(validUserProfile) {
-
-                            if (event.message) {
-                                receivedMessage(event, validUserProfile);
-                            } else if (event.postback) {
-                                receivedPostback(event, validUserProfile);
-                            }
-
-                        });
-
+                    } else if (event.message && event.message.is_echo) {
+                        
+                        // Handle the message echo ...
+                        //console.log("Echo received");
+                        
+                    } else if (event.delivery && SLEEP_MODE == false) {
+                        
+                        // Handle the message delivery ...
+                        //console.log("Delivery received");
+                        
+                    } else if (event.read) {
+                        
+                        // Handle the message read ...
+                        //console.log("Read received");
+                        
+                    } else if (event.referral) {
+                        
+                        // Log ref param
+                        var ref_for_logging = event.referral;
+                        if (event.referral != null) {
+                            ref_for_logging = ref_for_logging + " (" + JSON.stringify(event.referral) + ")";
+                        }
+                        console.log("Ref parameter for user " + event.sender.id + " = " + ref_for_logging + " [through Referral (existing user)]");
+                        
+                    } else {
+                        console.log("Webhook received unknown event: ", event);
                     }
-                } else if (event.message && event.message.is_echo) {
-                    
-                    // Handle the message echo ...
-                    //console.log("Echo received");
-                    
-                } else if (event.delivery && SLEEP_MODE == false) {
-                    
-                    // Handle the message delivery ...
-                    //console.log("Delivery received");
-                    
-                } else if (event.read) {
-                    
-                    // Handle the message read ...
-                    //console.log("Read received");
-                    
-                } else if (event.referral) {
-                    
-                    // Log ref param
-                    var ref_for_logging = event.referral;
-                    if (event.referral != null) {
-                        ref_for_logging = ref_for_logging + " (" + JSON.stringify(event.referral) + ")";
-                    }
-                    console.log("Ref parameter for user " + event.sender.id + " = " + ref_for_logging + " [through Referral (existing user)]");
-                    
-                } else {
-                    console.log("Webhook received unknown event: ", event);
-                }
-            });
+                });
+            }
         });
     }
 });
