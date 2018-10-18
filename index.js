@@ -11,6 +11,16 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // parse application/json
 app.use(bodyParser.json());
 
+
+// Only set this to true if all is broken and you need time to fix it - it will put the game on hold for everyone, returning a standard
+// message everytime they send anything!
+
+var SLEEP_MODE = false;   
+if (process.env.SLEEP_MODE == true || process.env.SLEEP_MODE == "true") {
+  SLEEP_MODE = true;
+}
+
+
 /* Mongo DB Stuff */
 
 var mongo_db_url = 'malaria';
@@ -61,12 +71,6 @@ if (process.env.MY_USER_ID) {
   myUserID = process.env.MY_USER_ID; // Production Page (set when running from Heroku)
 }
 
-// Only set this to true if all is broken and you need time to fix it - it will put the game on hold for everyone, returning a standard
-// message everytime they send anything!
-var SLEEP_MODE = false;   
-if (process.env.SLEEP_MODE == true || process.env.SLEEP_MODE == "true") {
-  SLEEP_MODE = true;
-}
 
 /* Local NPM Stuff */
 
