@@ -86,7 +86,7 @@ app.set('view engine', 'ejs');
 /* Test Pages */
 
 app.get('/', function(request, response) {
-  response.render('pages/index');
+  response.send("Malaria Challenge Test Page");
 });
 
 app.get('/version', function(request, response) {
