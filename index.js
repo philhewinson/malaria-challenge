@@ -2,7 +2,7 @@ var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
 var request = require('request');
-
+require('dotenv').config();
 
 
 // parse application/x-www-form-urlencoded
@@ -49,7 +49,7 @@ if (process.env.PAGE_ACCESS_TOKEN) {
 
 // PAGE_VERIFY_TOKEN
 
-var PAGE_VERIFY_TOKEN = "test_page_verify_token";  // Test Page (set when running locally)
+var PAGE_VERIFY_TOKEN = "";  // Test Page (set when running locally)
  
 if (process.env.PAGE_VERIFY_TOKEN) {
   PAGE_VERIFY_TOKEN = process.env.PAGE_VERIFY_TOKEN; // Production Page (set when running from Heroku)
@@ -65,10 +65,10 @@ if (process.env.BOT_PAGE_ALIAS) {
 
 // MY USER ID (FOR LOCAL TIMESTAMPS IN THE STATS AND LOGGING PAGES)
 
-var myUserID = 1281880625235887;
+var MY_USER_ID;
 
 if (process.env.MY_USER_ID) {
-  myUserID = process.env.MY_USER_ID; // Production Page (set when running from Heroku)
+    MY_USER_ID = process.env.MY_USER_ID; // Production Page (set when running from Heroku)
 }
 
 
@@ -549,7 +549,7 @@ app.post('/webhook', function (req, res) {
 
 
                             // Log the IP address too (only if it's me)
-                            if (parseInt(senderID) == myUserID) {
+                            if (parseInt(senderID) == MY_USER_ID) {
 
                                 var ipAddressRequest = "http://ip.changeip.com";
                                 request(ipAddressRequest, function(error, response, body) {
