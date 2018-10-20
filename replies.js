@@ -963,42 +963,6 @@ function getAlreadyZappedText(userProfile) {
 
 /* Algorithmic functions */
 
-function isEmoji(str) {
-    
-    var ranges = [
-        '\ud83c[\udf00-\udfff]', // U+1F300 to U+1F3FF
-        '\ud83d[\udc00-\ude4f]', // U+1F400 to U+1F64F
-        '\ud83d[\ude80-\udeff]' // U+1F680 to U+1F6FF
-    ];
-    
-    if (str.match(ranges.join('|'))) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-function getEmojisFromString(str) {
-    
-    var characterArray = Array.from(str);
-    
-    var emojiString = "";
-    
-    for (var i=0; i<characterArray.length; i++) {
-        if (isEmoji("" + characterArray[i])) {
-            emojiString += characterArray[i];
-        }
-    }
-    
-    return emojiString;
-    
-}
-
-function arrayContains(needle, arrhaystack) {
-
-    return (arrhaystack.indexOf(needle) > -1);
-}
-
 function isNumber(obj) { return !isNaN(parseFloat(obj)) }
 
 function getReadableTime(secondsTotal, shorthand) {
