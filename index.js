@@ -189,7 +189,7 @@ app.post('/webhook', function (req, res) {
                 
                                     var errorMessage = 'Error on http://ip.changeip.com: ' + e.message;
                                     console.error(errorMessage);
-                                    logErrorInMongo(errorMessage, senderID);
+                                    db.logError(errorMessage, senderID);
                 
                                 });
 
@@ -315,7 +315,7 @@ function getValidUserProfile(recipientID, callback) {
                 } catch (e) {
                     var jsonParseError = "Error Parsing graph.facebook.com JSON return value for user " + recipientID + " (error: " + e + ")";
                     console.error(jsonParseError);
-                    logErrorInMongo(jsonParseError, recipientID);
+                    db.logError(jsonParseError, recipientID);
                 }
 
                 var logText = "";
@@ -338,7 +338,7 @@ function getValidUserProfile(recipientID, callback) {
 
                 if (error) {
                     console.error(JSON.stringify(error));
-                    logErrorInMongo(JSON.stringify(error), recipientID);
+                    db.logError(JSON.stringify(error), recipientID);
                     send.sendTypingIndicator(recipientID, false);
                 } else {
 
@@ -381,7 +381,7 @@ function getValidUserProfile(recipientID, callback) {
                         // Didn't get valid user profile back from users table or graph.facebook.com, so log an error
                         var errorToRecord = "userProfile invalid from graph.facebook.com for user " + recipientID + " and invalid userProfile returned from users table";
                         console.error(errorToRecord);
-                        // logErrorInMongo(errorToRecord, recipientID);
+                        // db.logError(errorToRecord, recipientID);
             
                         // userProfile invalid from both graph.facebook.com and the database, so check if it's null and if so, set each property to null
                         // so it doesn't cause a crash later
@@ -407,7 +407,7 @@ function getValidUserProfile(recipientID, callback) {
 
                 var errorMessage = 'Error on https://graph.facebook.com/v2.6/: ' + e.message;
                 console.error(errorMessage);
-                logErrorInMongo(errorMessage, senderID);
+                db.logError(errorMessage, senderID);
 
             });
         }

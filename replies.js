@@ -439,10 +439,14 @@ switch (newNumZaps) {
         send.sendMessage(recipientID,
 
             [
-                2000, "Do you know what malaria is?"
+                2000, "Do you know what a mosquito sounds like!? ..."
             ],
     
-            null
+            function() {
+
+                send.sendAudio(recipientID, "http://www.projectedgames.com/amf/mozzy-sound.m4a");
+
+            }
         );
 
         break; 

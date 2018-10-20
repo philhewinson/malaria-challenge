@@ -99,16 +99,16 @@ function callSendAPI(messageData, recipientID) {
                 } else {
 
                     if (body != null) {
-                        logErrorInMongo("Error in return Body from https://graph.facebook.com/v2.6/me/messages: " + JSON.stringify(body), recipientID);
+                        db.logError("Error in return Body from https://graph.facebook.com/v2.6/me/messages: " + JSON.stringify(body), recipientID);
                     }
 
                 }
                 
                 console.error("Unable to send message.");
-                //logErrorInMongo("Unable to send message.", recipientID);
+                //db.logError("Unable to send message.", recipientID);
                 if (error != null) {
                     console.error("Error: " + JSON.stringify(error));
-                    logErrorInMongo("Error: " + JSON.stringify(error), recipientID);
+                    db.logError("Error: " + JSON.stringify(error), recipientID);
                 } 
                 if (response != null) {
                     //console.error("Response: " + JSON.stringify(response));
@@ -124,7 +124,7 @@ function callSendAPI(messageData, recipientID) {
 
         var errorMessage = 'Error on https://graph.facebook.com/v2.6/me/messages: ' + e.message;
         console.error(errorMessage);
-        logErrorInMongo(errorMessage, recipientID);
+        db.logError(errorMessage, recipientID);
 
     });  
 }
@@ -252,6 +252,27 @@ function sendImage(recipientID, imageURL) {
     
 }
 
+function sendAudio(recipientID, audioURL) {
+
+    var data = {
+        recipient: {
+            id: recipientID
+        },
+        message: {
+            attachment: {
+                type: "audio",
+                payload: {
+                    url: audioURL,
+                    is_reusable: true,
+                }
+            }
+        }
+    };
+
+    callSendAPI(data, recipientID);
+
+}
+
 
 function sendMozzy(recipientID, userProfile) {
 
@@ -283,7 +304,7 @@ function sendMozzy(recipientID, userProfile) {
             if (err) {
                 console.error("MongoDB error: " + err);
                 console.error("Couldn't send mozzy to user due to DB insertion error: recipientID = " + recipientID);
-                logErrorInMongo("Couldn't send mozzy to user due to DB insertion error: recipientID = " + recipientID, recipientID, true);
+                db.logError("Couldn't send mozzy to user due to DB insertion error: recipientID = " + recipientID, recipientID, true);
             } else {
                 
             // Send the mozzy to the user
@@ -312,7 +333,7 @@ function sendMozzy(recipientID, userProfile) {
                     }
                 };
 
-                callSendAPI(data, currentTimestamp, recipientID);
+                callSendAPI(data, recipientID);
                 
             }
         }    
@@ -439,6 +460,7 @@ module.exports = {
   sendTypingIndicator,
   sendMessage,
   sendImage,
+  sendAudio,
   share,
   sendMozzy
 }
