@@ -5,7 +5,7 @@ var request = require('request');
 require('dotenv').config();
 
 var replies = require('./replies')
-
+var db = require('./db')
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -20,22 +20,6 @@ app.use(bodyParser.json());
 var SLEEP_MODE = false;   
 if (process.env.SLEEP_MODE == true || process.env.SLEEP_MODE == "true") {
   SLEEP_MODE = true;
-}
-
-
-/* Mongo DB Stuff */
-
-var mongo_db_url = 'malaria';
-if (process.env.MONGODB_URI) {
-    mongo_db_url = process.env.MONGODB_URI;
-}
-
-var collections = ['users', 'logs', 'messages'];
-var mongojs = require('mongojs');
-
-var mongodb = null;
-if (SLEEP_MODE == false) {
-    mongodb = mongojs(mongo_db_url, collections);
 }
 
 
@@ -117,7 +101,7 @@ app.get('/webhook', function(req, res) {
   app.get('/purge_logs', function(req, res) {
     
     if (SLEEP_MODE == false) {
-        purgeLogs();
+        db.purgeLogs();
         //res.sendStatus(200);
         res.status(200).end();
     } else {
@@ -136,29 +120,6 @@ app.get('/webhook', function(req, res) {
 /* Logging functions */
 
 // Function to record errors in MongoDB
-function logErrorInMongo(error, userID) {
-
-    if (userID == null) {
-        userID = -1;
-    }
-    
-    if (SLEEP_MODE == false) {
-
-        mongodb.logs.insert(
-            {
-                "timestamp": new Date().getTime(),
-                "user": parseInt(userID),
-                "type": "error",
-                "log": error
-            },
-            function(err, results){
-                if (err) { console.error("MongoDB error: " + err); }
-            }    
-        );
-    }
-    
-}
-
 
 /*******/
 
@@ -210,7 +171,7 @@ app.post('/webhook', function (req, res) {
 
                             // Not in sleep mode, so continue as normal! ...
 
-                            mongodb.logs.insert(
+                            db.mongo.logs.insert(
                                 {
                                     "timestamp": new Date().getTime(),
                                     "user": parseInt(senderID),
@@ -229,7 +190,7 @@ app.post('/webhook', function (req, res) {
 
                                 var ipAddressRequest = "http://ip.changeip.com";
                                 request(ipAddressRequest, function(error, response, body) {
-                                    mongodb.logs.insert(
+                                    db.mongo.logs.insert(
                                         {
                                             "timestamp": new Date().getTime(),
                                             "user": parseInt(senderID),
@@ -325,7 +286,7 @@ function getValidUserProfile(recipientID, callback) {
 
     var needToGetUserProfileFromFacebook = false;
 
-    mongodb.users.find({ "user": parseInt(recipientID) }, 
+    db.mongo.users.find({ "user": parseInt(recipientID) }, 
     { "first_name": 1, "last_name": 1, "profile_pic": 1, "locale": 1, "timezone": 1, "gender": 1, _id: 0 },
     function(err, mongoUserResults){
 
@@ -381,7 +342,7 @@ function getValidUserProfile(recipientID, callback) {
                     logText = JSON.stringify(bodyJSON);
                 }
 
-                mongodb.logs.insert(
+                db.mongo.logs.insert(
                     {
                         "timestamp": new Date().getTime(),
                         "user": parseInt(recipientID),
@@ -417,7 +378,7 @@ function getValidUserProfile(recipientID, callback) {
                     if (isUserProfileValid(userProfile) == true) {
                 
                         // As the userProfile retrieved from graph.facebook.com is valid, update the details in the users table if it exists
-                        mongodb.users.findAndModify(
+                        db.mongo.users.findAndModify(
                             {
                                 query: { "user": parseInt(recipientID) },
                                 update: { $set: { "first_name": userProfile.first_name,
@@ -501,7 +462,7 @@ function receivedMessage(event, userProfile) {
 
     if (!messageEcho) {
 
-        mongodb.users.count({ "user": parseInt(senderID) }, function(err, mongoUserResults){
+        db.mongo.users.count({ "user": parseInt(senderID) }, function(err, mongoUserResults){
             
             if (err) { console.error("MongoDB error: " + err); }
             
@@ -537,7 +498,7 @@ function receivedMessage(event, userProfile) {
                         };
                     //console.log("Query JSON (messages.insert): " + queryJSON);
         
-                    mongodb.messages.insert(
+                    db.mongo.messages.insert(
                         queryJSON,
                         function(err, results){
                             if (err) { console.error("MongoDB error: " + err); }
@@ -546,7 +507,7 @@ function receivedMessage(event, userProfile) {
                     );
         
                     // Increment num_messages for this user in the user's table
-                    mongodb.users.findAndModify(
+                    db.mongo.users.findAndModify(
                         {
                             query: { "user": parseInt(senderID), "num_messages": {$ne:null} },
                             update: { $inc: { "num_messages": 1 } }
@@ -578,7 +539,7 @@ function receivedMessage(event, userProfile) {
                             };
                         //console.log("Query JSON (message_attachments.insert): " + queryJSON);
         
-                        mongodb.message_attachments.insert(
+                        db.mongo.message_attachments.insert(
                             queryJSON,
                             function(err, results){
                                 if (err) { console.error("MongoDB error: " + err); }
@@ -587,7 +548,7 @@ function receivedMessage(event, userProfile) {
                         );
         
                         // Increment num_message_attachments for this user in the user's table
-                        mongodb.users.findAndModify(
+                        db.mongo.users.findAndModify(
                             {
                                 query: { "user": parseInt(senderID), "num_message_attachments": {$ne:null} },
                                 update: { $inc: { "num_message_attachments": 1 } }
@@ -635,7 +596,7 @@ function receivedPostback(event, userProfile) {
     //console.log("Received postback for user %d and page %d with payload '%s' " + 
     //"at %d", senderID, recipientID, payload, timeOfPostback);
 
-    mongodb.users.count({ "user": parseInt(senderID) }, function(err, mongoUserResults){
+    db.mongo.users.count({ "user": parseInt(senderID) }, function(err, mongoUserResults){
         
         if (err) { console.error("MongoDB error: " + err); }
         
@@ -691,28 +652,4 @@ function receivedPostback(event, userProfile) {
     });
 
 }
-
-function purgeLogs() {
-    
-    var currentTimestamp = new Date().getTime();
-
-    var numDaysToKeepLogsFor = 3;   // Variable for LOCAL TEST ENVIRONMENT ONLY
-    if (process.env.NUM_DAYS_KEEP_LOGS) {
-      numDaysToKeepLogsFor = parseFloat(process.env.NUM_DAYS_KEEP_LOGS);
-    }
-
-    console.log("Purging old logs more than " + numDaysToKeepLogsFor + " days old ...");
-    
-    mongodb.logs.remove(
-        {
-            "timestamp": { $lte: parseInt(currentTimestamp - (numDaysToKeepLogsFor*24*60*60*1000)) }
-        },
-        function(err, results){
-
-            if (err) { console.error("MongoDB error: " + err); }
-            console.log("MongoDB results: " + JSON.stringify(results));
-        }
-    );
-}
-
 

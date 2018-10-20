@@ -1,6 +1,7 @@
 
 var request = require('request');
 
+var db = require('./db')
 
 var PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN; 
 var SLEEP_MODE = process.env.SLEEP_MODE == "true"
@@ -234,7 +235,7 @@ function callSendAPI(messageData, recipientID) {
         
             // Log request and response ...
             if (SLEEP_MODE == false) {
-                mongodb.logs.insert(
+                db.mongo.logs.insert(
                     {
                         "timestamp": new Date().getTime(),
                         "user": parseInt(recipientID),
@@ -257,7 +258,7 @@ function callSendAPI(messageData, recipientID) {
                 
                 // If the user's status is blocked or policy, set it to active
                 if (SLEEP_MODE == false) {
-                    mongodb.users.findAndModify(
+                    db.mongo.users.findAndModify(
                         {
                             query: {$or:[
                                 { "status":{$eq:"blocked"}, "user": parseInt(bodyRecipientID) },
@@ -280,7 +281,7 @@ function callSendAPI(messageData, recipientID) {
                     // If the body.error.code is 200, then update the user's status to "blocked"
                         // Ref: https://developers.facebook.com/docs/messenger-platform/send-api-reference/errors
                     
-                    mongodb.users.findAndModify(
+                    db.mongo.users.findAndModify(
                         {
                             query: { "user": parseInt(recipientID) },
                             update: { $set: { "status": "blocked" } }
@@ -297,7 +298,7 @@ function callSendAPI(messageData, recipientID) {
                     // If the body.error.code is 10, then update the user's status to "policy"
                         // Ref: https://developers.facebook.com/docs/messenger-platform/policy-overview
 
-                    mongodb.users.findAndModify(
+                    db.mongo.users.findAndModify(
                         {
                             query: { "user": parseInt(recipientID) },
                             update: { $set: { "status": "policy" } }
@@ -405,7 +406,7 @@ function sendMessageInner(recipientID, messageTextArray, callback, logInMessages
                 };
             //console.log("Query JSON (messages.insert): " + queryJSON);
 
-            mongodb.messages.insert(
+            db.mongo.messages.insert(
                 queryJSON,
                 function(err, results){
                     if (err) { console.error("MongoDB error: " + err); }
