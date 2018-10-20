@@ -212,7 +212,7 @@ function respondToIntent(recipientID, userProfile, parsed) {
         return
 
       case 'greeting':
-        send.sendMessage(recipientID, [1000, "Hi " + userProfile.first_name + ", Midge here, coming to get you."], function() { sendMozzy(recipientID);}, true);
+        send.sendMessage(recipientID, [1000, "Hi " + userProfile.first_name + ", Midge here, coming to get you."], function() { send.sendMozzy(recipientID);}, true);
         return
 
       case 'gratitude':
