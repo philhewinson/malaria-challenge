@@ -765,7 +765,6 @@ function getResponseToPersuade() {
             text = "Apparently the nets the anti-malaria foundation provide both empower local business and can protect 2 lives for 3 years."
             break
         case 5:
-            send.sendMessage(recipientID, [200, "But.."], null, true);
             text = "But.. People are dying."
             break;
         case 6:
