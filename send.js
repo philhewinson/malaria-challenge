@@ -252,7 +252,7 @@ function sendImage(recipientID, imageURL) {
     
 }
 
-function sendAudio(recipientID, audioURL) {
+function sendAudio(recipientID, audioURL, callback) {
 
     var data = {
         recipient: {
@@ -266,6 +266,62 @@ function sendAudio(recipientID, audioURL) {
                     is_reusable: true,
                 }
             }
+        }
+    };
+
+    callSendAPI(data, recipientID);
+
+    if (callback != null) {
+        callback();
+    }
+
+}
+
+function sendVideo(recipientID, videoURL, callback) {
+
+    var data = {
+        recipient: {
+            id: recipientID
+        },
+        message: {
+            attachment: {
+                type: "video",
+                payload: {
+                    url: videoURL,
+                    is_reusable: true,
+                }
+            }
+        }
+    };
+
+    callSendAPI(data, recipientID);
+
+    if (callback != null) {
+        callback();
+    }
+
+}
+
+function sendQuickReplies(recipientID, message, title1, payload1, title2, payload2) {
+
+    var data = {
+        recipient: {
+            id: recipientID
+        },
+        message: {
+            text: message,
+            quick_replies: [
+                {
+                    content_type: "text",
+                    title: title1,
+                    payload: payload1,
+                },
+                {
+                    content_type: "text",
+                    title: title2,
+                    payload: payload2,
+                },
+            ]
         }
     };
 
@@ -461,6 +517,8 @@ module.exports = {
   sendMessage,
   sendImage,
   sendAudio,
+  sendVideo,
   share,
-  sendMozzy
+  sendMozzy,
+  sendQuickReplies
 }

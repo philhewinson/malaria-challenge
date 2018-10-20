@@ -419,7 +419,7 @@ function getValidUserProfile(recipientID, callback) {
 /* Receive functions */
   
 function receivedMessage(event, userProfile) {
-    
+    console.log(JSON.stringify(event));
     var senderID = event.sender.id;
     var recipientID = event.recipient.id;
     var timeOfMessage = event.timestamp;
@@ -464,7 +464,37 @@ function receivedMessage(event, userProfile) {
 
                 // Otherwise, the user exists, so process the message / attachment ...
 
-                if (messageText) {
+                var processMessageText = true;
+
+                var quickReply = message.quick_reply;
+
+                if (quickReply != null) {
+
+                    var quickReplyPayload = quickReply.payload;
+                    
+                    if (quickReplyPayload != null) {
+
+                        // Then we process the message as a quick reply
+                        processMessageText = false;
+
+                        db.mongo.users.find({ "user": parseInt(senderID) }, function(err, mongoUserResults){
+
+                            if (err) { console.error("MongoDB error: " + err); }
+            
+                            if (mongoUserResults != null) {
+            
+                                var numZaps = mongoUserResults[0].num_zaps;
+            
+                                replies.sendGroupOfMessages(senderID, userProfile, numZaps, quickReplyPayload);
+            
+                            }
+            
+                        });
+
+                    }
+                }
+
+                if (messageText && processMessageText == true) {
                     
                     // Log the message text first ...
         
