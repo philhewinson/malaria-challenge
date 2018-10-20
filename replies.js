@@ -147,8 +147,7 @@ function processMessage(recipientID, userProfile, messageText) {
 function respondToQuestion(recipientID, userProfile, question, subject) {
   switch (subject) {
     case 'score':
-      var score = userProfile.num_referrals|0
-      send.sendMessage(recipientID, [200, "Your score is " + score], null, true);
+      send.sendMessage(recipientID, [200, getResponseToLeaderboard(recipientID)], null, true);
       return
 
     case 'english':
