@@ -227,14 +227,14 @@ app.post('/webhook', function (req, res) {
                     } else if (event.referral) {
 
                       var senderID = event.sender.id;
-
-                      var inviter = +ref.replace("invite_", "");
-                        
                         // Log ref param
                         var ref_for_logging = event.referral;
                         if (event.referral != null) {
                             ref_for_logging = ref_for_logging + " (" + JSON.stringify(event.referral) + ")";
                         }
+
+                      var inviter = (event.referral.ref.replace("invite_", ""))|0;
+                        
                         console.log("Ref parameter for user " + senderID + " = " + ref_for_logging + " [through Referral (existing user)]");
 
                         replies.sendIntroText(senderID, null, inviter);
