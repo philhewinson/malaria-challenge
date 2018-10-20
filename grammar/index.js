@@ -44,8 +44,6 @@ const lexer = moo.compile({
 
       persuade: ['might','maybe','unsure','consider', 'convinced'],
       paid: ['paid', 'complete'],
-        
-
     }),
   },
 })

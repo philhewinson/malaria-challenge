@@ -25,6 +25,8 @@ function sendIntroText(recipientID, userProfile, inviter) {
         inviterForQuery = parseInt(inviter);
     }
 
+    console.log('invite', inviter, inviterForQuery)
+
     db.mongo.users.findAndModify({
 
         query: { "user": parseInt(recipientID) },
