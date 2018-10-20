@@ -207,7 +207,7 @@ function respondToIntent(recipientID, userProfile, parsed) {
         sendIntroText(recipientID, userProfile, null);
         return
 
-      case 'share':
+      case 'invite':
         send.share(recipientID);
         return
 

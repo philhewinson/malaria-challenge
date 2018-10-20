@@ -11,7 +11,7 @@ const keywordsIgnoreCase = keywords => {
 
 const lexer = moo.compile({
   emoji: {
-    match: testEmoji,
+    match: [testEmoji, ':)', ':(', ':D'],
     type: moo.keywords({
       greeting: ['👋'],
       yes: ['👍', '👌', '🆗'],
@@ -42,7 +42,7 @@ const lexer = moo.compile({
 
       negation: ['never', 'no', 'not', "don't", "won't", "shan't", "can't"],
 
-      persuade: ['might','maybe','unsure','consider', 'convinced'],      
+      persuade: ['might','maybe','unsure','consider', 'convinced'],
       paid: ['paid', 'complete'],
         
 
@@ -83,7 +83,6 @@ function parseIntent(message) {
     'buy',
     'no',
     'yes',
-    'invite',
     'invite',
     'gratitude',
     'help',
