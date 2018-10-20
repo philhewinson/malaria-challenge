@@ -31,7 +31,7 @@ const lexer = moo.compile({
       bye: ['bye', 'gtg', 'leave', 'later', 'away', 'cya', 'stop', 'unsubscribe'],
       gratitude: ['thank', 'thanks', 'thx', 'thks', 'thk', 'tu'],
       reset: ['reset', 'restart', 'wipe'],
-      buy: ['donate', 'buy', 'pay'],
+      buy: ['donate', 'buy', 'pay', 'purchase'],
 
       malaria: ['malaria'],
       mosquito: ['mosquito', 'mozzie', 'mozie'],
@@ -74,17 +74,16 @@ function parseIntent(message) {
   }
 
   for (let type of [
-    'yes',
-    'no',
-    'greeting',
-    'invite',
-    'buy',
+    'reset',
     'persuade',
     'paid',
+    'bye',
+    'greeting',
     'question',
     'buy',
-    'bye',
-    'reset',
+    'no',
+    'yes',
+    'invite',
     'invite',
     'gratitude',
     'help',

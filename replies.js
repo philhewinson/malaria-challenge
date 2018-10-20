@@ -158,7 +158,7 @@ function respondToQuestion(recipientID, userProfile, question, subject) {
       return
     
     case 'buy':
-      // TODO persuade
+      send.sendMessage(recipientID, [200, getResponseToPersuade()], null, true); 
       return
 
     case 'mosquito':
