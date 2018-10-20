@@ -1145,12 +1145,12 @@ function getResponseToNo() {
 
 //Count how many times you've referred...
 function getResponseToLeaderboard(recipientID, userProfile) {
+//This isn't capturing the mongodb user table profile (with updated referrals) - it is only capturing the facebook profile
   console.log(userProfile)
 
-//This has the facebook userprofile logged but isn't capturing the mongodb user table profile (with updated referrals)
 
-    userProfile = db.mongo.users.find({"user": recipientID});
-  console.log(recipientID)
+  //  userProfile = db.mongo.users.find({"user": recipientID});
+  //console.log(recipientID)
     // direct_referrals = db.mongo.coll.find({"num_referrals":{"$exists":recipientID}}).count()
 
 
