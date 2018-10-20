@@ -27,7 +27,7 @@ const lexer = moo.compile({
       no: ['n', 'no', 'nope', 'nop', 'nah', 'na', 'eh'],
       invite: ['invite', 'share', 'refer'],
       greeting: ['hello', 'hi', 'yo', 'heya', 'hey', 'he', 'sup'],
-      question: ['what', 'who', 'how', 'why', 'where', 'wha', 'which'],
+      question: ['what', 'who', 'how', 'why', 'where', 'wha', 'which', 'will'],
       bye: ['bye', 'gtg', 'leave', 'later', 'away', 'cya', 'stop', 'unsubscribe'],
       gratitude: ['thank', 'thanks', 'thx', 'thks', 'thk', 'tu'],
       reset: ['reset', 'restart', 'wipe'],

@@ -142,29 +142,48 @@ function processMessage(recipientID, userProfile, messageText) {
   return respondToIntent(recipientID, userProfile, parsed)
 }
 
+function respondToQuestion(recipientID, userProfile, question, subject) {
+  switch (subject) {
+    case 'malaria':
+      send.sendMessage(recipientID, [200, "?"], null, true);
+      return
+
+    case 'score':
+      var score = userProfile.num_referrals|0
+      send.sendMessage(recipientID, [200, "Your score is " + score], null, true);
+      return
+
+    case 'english':
+      send.sendMessage(recipientID, [1000, "Sorry, English is the only language I speak"], null, true);
+      return
+    
+    case 'buy':
+      // TODO persuade
+      return
+
+    case 'mosquito':
+      send.sendMessage(recipientID, [0, "Bzzzzt."], null, true);
+      return
+
+    case 'net':
+      send.sendMessage(recipientID, [0, "Nets are good"], null, true);
+      return
+
+    case 'malaria':
+      send.sendMessage(recipientID, [0, "Malaria is bad"], null, true);
+      return
+
+    default:
+      send.sendMessage(recipientID, [2000, getResponseToQuestionInput(userProfile)], null, true);
+      return
+  }
+}
+
 function respondToIntent(recipientID, userProfile, parsed) {
     console.log(parsed)
     switch (parsed.intent) {
       case 'question':
-        // TODO move this to its own function
-        switch (parsed.content) {
-          case 'malaria':
-            send.sendMessage(recipientID, [200, "?"], null, true);
-            return
-
-          case 'score':
-            var score = userProfile.num_referrals|0
-            send.sendMessage(recipientID, [200, "Your score is " + score], null, true);
-            return
-
-          case 'english':
-            send.sendMessage(recipientID, [1000, "Sorry, English is the only language I speak"], null, true);
-            return
-
-          default:
-            send.sendMessage(recipientID, [2000, getResponseToQuestionInput(userProfile)], null, true);
-            return
-        }
+        return respondToQuestion(recipientID, userProfile, parsed.question, parsed.content)
 
       case 'yes':
         send.sendMessage(recipientID, [200, getResponseToYes()], null, true);
