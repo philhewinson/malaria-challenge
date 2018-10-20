@@ -655,6 +655,9 @@ function receivedPostback(event, userProfile) {
 
             replies.sendIntroText(senderID, userProfile, valid_inviter);
             
+        } else if (payload.includes("zap")) {
+            var payloadTimestamp = payload.replace("zap_", "");
+            replies.zap(senderID, userProfile, payloadTimestamp);
         } else if (payload == "My Ranking") {
             // TO IMPLEMENT ...
             // viewScore(senderID, false, true, null);
