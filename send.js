@@ -1,6 +1,8 @@
 
 var request = require('request');
 
+var db = require('./db')
+
 var SLEEP_MODE = process.env.SLEEP_MODE == "true"
 var PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN; 
 
