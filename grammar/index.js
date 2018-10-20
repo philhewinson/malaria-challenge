@@ -32,7 +32,8 @@ const lexer = moo.compile({
       gratitude: ['thank', 'thanks', 'thx', 'thks', 'thk', 'tu'],
       reset: ['reset', 'restart', 'wipe'],
       buy: ['donate', 'buy', 'pay', 'purchase'],
-
+      name: ['name'],
+      
       malaria: ['malaria'],
       mosquito: ['mosquito', 'mozzie', 'mozie'],
       net: ['net', 'nets'],
@@ -62,6 +63,7 @@ function parseIntent(message) {
     'malaria',
     'mosquito',
     'net',
+    'name',
     'game',
   ]) {
     if (tokens.find(tok => tok.type === type)) {

@@ -189,7 +189,7 @@ app.post('/webhook', function (req, res) {
                 
                                     var errorMessage = 'Error on http://ip.changeip.com: ' + e.message;
                                     console.error(errorMessage);
-                                    db.logError(errorMessage, senderID);
+                                    logErrorInMongo(errorMessage, senderID);
                 
                                 });
 
@@ -315,7 +315,7 @@ function getValidUserProfile(recipientID, callback) {
                 } catch (e) {
                     var jsonParseError = "Error Parsing graph.facebook.com JSON return value for user " + recipientID + " (error: " + e + ")";
                     console.error(jsonParseError);
-                    db.logError(jsonParseError, recipientID);
+                    logErrorInMongo(jsonParseError, recipientID);
                 }
 
                 var logText = "";
@@ -338,7 +338,7 @@ function getValidUserProfile(recipientID, callback) {
 
                 if (error) {
                     console.error(JSON.stringify(error));
-                    db.logError(JSON.stringify(error), recipientID);
+                    logErrorInMongo(JSON.stringify(error), recipientID);
                     send.sendTypingIndicator(recipientID, false);
                 } else {
 
@@ -381,7 +381,7 @@ function getValidUserProfile(recipientID, callback) {
                         // Didn't get valid user profile back from users table or graph.facebook.com, so log an error
                         var errorToRecord = "userProfile invalid from graph.facebook.com for user " + recipientID + " and invalid userProfile returned from users table";
                         console.error(errorToRecord);
-                        // db.logError(errorToRecord, recipientID);
+                        // logErrorInMongo(errorToRecord, recipientID);
             
                         // userProfile invalid from both graph.facebook.com and the database, so check if it's null and if so, set each property to null
                         // so it doesn't cause a crash later
@@ -407,7 +407,7 @@ function getValidUserProfile(recipientID, callback) {
 
                 var errorMessage = 'Error on https://graph.facebook.com/v2.6/: ' + e.message;
                 console.error(errorMessage);
-                db.logError(errorMessage, senderID);
+                logErrorInMongo(errorMessage, senderID);
 
             });
         }
@@ -496,7 +496,7 @@ function receivedMessage(event, userProfile) {
 
                 if (messageText && processMessageText == true) {
                     
-                    // Log the message text first ...
+                // Log the message text first ...
         
                     var currentTimestamp = new Date().getTime();
         
@@ -635,11 +635,13 @@ function receivedPostback(event, userProfile) {
                 
                 // This is an invitation from another user, so get the id of the inviter
                 var inviter = ref.replace("invite_", "");
-                
+              console.log("Line 688: " + inviter + " = checking if it is a number and not senderID");
                 // Ensure inviter is made up of digits only and is not equal to the sender id
                 var isnum = /^\d+$/.test(inviter);
                 if (isnum && inviter != senderID) {
                     valid_inviter = inviter;
+              console.log("Valid: " + valid_inviter);
+
                 }
             }
             
@@ -653,14 +655,11 @@ function receivedPostback(event, userProfile) {
 
             replies.sendIntroText(senderID, userProfile, valid_inviter);
             
-        } else if (payload.includes("zap")) {
-            var payloadTimestamp = payload.replace("zap_", "");
-            replies.zap(senderID, userProfile, payloadTimestamp);
         } else if (payload == "My Ranking") {
             // TO IMPLEMENT ...
             // viewScore(senderID, false, true, null);
         } else if (payload == "Invite Friends") {
-            send.share(senderID);
+            share(senderID);
         }
 
     });

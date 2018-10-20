@@ -162,6 +162,13 @@ function respondToQuestion(recipientID, userProfile, question, subject) {
         [0, userProfile.first_name, 400, "People are dying."],
       ]), null, true);
       return
+    case 'name':
+            send.sendMessage(recipientID,
+        [
+            500, "My name is midge the mozz and I've set my friends on you.",
+            2200, "Why don't you buy a mozzie net?",
+        ]);
+        return
 
     case 'mosquito':
       send.sendMessage(recipientID, [0, "Bzzzzt."], null, true);
