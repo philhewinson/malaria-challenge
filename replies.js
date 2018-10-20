@@ -214,14 +214,23 @@ function respondToIntent(recipientID, userProfile, parsed) {
         return
 
       case 'persuade':
-        send.sendMessage(recipientID, [200, getResponseToPersuade()], null, true); 
+        send.sendMessage(recipientID, randomChoice([
+          [0, "How", 100, "Can", 100, "you", 100, "be", 100, "so", 100, "heartless."]
+          [0, "Fine", 500, "I'll set my mozzie friends on you."]
+          [200, "The anti-malaria foundation will make sure that every penny makes it to the people who need it."],
+          [0, "Did you know that we mosquitoes kill ... every year, but the anti-malaria foundation provide pesky nets that stop me from getting my teeth into you."],
+          [0, "That's understandable", 400,  "But, apparently the nets the anti-malaria foundation provide both empower local business and can protect 2 lives for 3 years."],
+          [0, "Oh", 300, "Ok then.", 300, "And to think I thought you were nice."],
+          [0, userProfile.first_name, 400, "People are dying."],
+        ]), null, true);
+
         return
 
       case 'buy':
         send.sendMessage(recipientID, randomChoice([
           [0, "Amazing!", 200,  "Your net will protect someone from Malaria for at least 4 years."],
           [0, "Thank you so much.", 300, "This maybe the most impactful £1.50 you’ve ever spent"],
-          [0, userProfile.first_name, 500, "This will change someone's life, thank you"],
+          [0, userProfile.first_name, 400, "This will change someone's life, thank you"],
         ]), null, true);
         // TODO A ‘first name’, it looks like you’ve already bought one. Share this with a friend so that they can buy a net. 
         return
@@ -747,33 +756,6 @@ function getResponseToYes() {
 
 function getResponseToPersuade() {
 
-    // Get a random number between 1 and 5 inclusive
-    var randomNumber = Math.floor(Math.random() * 6) + 1;
-    
-    
-    switch (randomNumber) {
-        
-        case 1:
-            text = "For half the price of a cup of coffee - just £1.50, you can provide a net that could keep 2 people safe for 2 years.";
-            break;
-        case 2:
-            text = "The anti-malaria foundation will make sure that every penny makes it to the people who need it.";
-            break;
-        case 3:
-            text = "Did you know that we mosquitoes kill ... every year, but the anti-malaria foundation provide pesky nets that stop me from getting my teeth into you.";
-            break;
-        case 4:
-            text = "Apparently the nets the anti-malaria foundation provide both empower local business and can protect 2 lives for 3 years."
-            break
-        case 5:
-            text = "But.. People are dying."
-            break;
-        case 6:
-            text = "Oh, ok then. And to think I thought you were nice."
-            break;
-    }
-
-    return text;
 
 }
 
