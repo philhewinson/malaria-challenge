@@ -173,6 +173,16 @@ function respondToQuestion(recipientID, userProfile, question, subject) {
       send.sendMessage(recipientID, [0, "Malaria is bad"], null, true);
       return
 
+    case 'emoji':
+      send.sendMessage(recipientID, randomChoice([
+        [0, "🦟"],
+        [0, "🥅"],
+        [0, "🥅"],
+        [0, "💉"],
+        [0, "💊"],
+      ], null, true)
+      return
+
     default:
       send.sendMessage(recipientID, [2000, getResponseToQuestionInput(userProfile)], null, true);
       return
