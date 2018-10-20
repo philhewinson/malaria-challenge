@@ -235,9 +235,14 @@ app.post('/webhook', function (req, res) {
 
                       var inviter = (event.referral.ref.replace("invite_", ""))|0;
                         
-                        console.log("Ref parameter for user " + senderID + " = " + ref_for_logging + " [through Referral (existing user)]");
+                      console.log("Ref parameter for user " + senderID + " = " + ref_for_logging + " [through Referral (existing user)]");
 
-                        replies.sendIntroText(senderID, null, inviter);
+                      // Read profile from Facebook and create new user 
+                      getValidUserProfile(senderID, function(validUserProfile) {
+
+                        replies.sendIntroText(senderID, validUserProfile, inviter);
+
+                      });
                         
                     } else {
                         console.log("Webhook received unknown event: ", event);
