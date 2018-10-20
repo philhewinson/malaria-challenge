@@ -552,7 +552,7 @@ function sendGroupOfMessages(recipientID, userProfile, newNumZaps, payload) {
                 send.sendMessage(recipientID,
 
                     [
-                        2000, "Malaria is an often deadly fever caused by a parasite that is spread by Mosquitoes in many tropical and subtropical regions.",
+                        2000, "Malaria is an often deadly fever which can leave an infected person with brain damage and respiratory issues.",
                         3000, "It kills half a million people every year!",
                     ],
     
@@ -753,7 +753,7 @@ function sendGroupOfMessages(recipientID, userProfile, newNumZaps, payload) {
                     function() {
                         setTimeout(function() {
 
-                            send.sendVideo(recipientID, "https://www.projectedgames.com/amf/mozzy-video.mov",
+                            send.sendVideo(recipientID, "https://www.projectedgames.com/amf/mozzy-video2.mp4",
                             
                             function() {
 
