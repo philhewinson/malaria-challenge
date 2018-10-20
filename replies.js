@@ -10,7 +10,7 @@ function sendIntroMessages(recipientID, userProfile) {
     sendMessage(recipientID,
 
         [
-            0, "Hi " + userProfile.first_name + "!",
+            0, "Hello " + userProfile.first_name + "!",
             3000, "Welcome to the Malaria Challenge!"
         ],
 
