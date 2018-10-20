@@ -147,7 +147,7 @@ function processMessage(recipientID, userProfile, messageText) {
 function respondToQuestion(recipientID, userProfile, question, subject) {
   switch (subject) {
     case 'score':
-      send.sendMessage(recipientID, [200, getResponseToLeaderboard(recipientID)], null, true);
+      send.sendMessage(recipientID, getResponseToLeaderboard(recipientID, userProfile), null, true);
       return
 
     case 'english':
@@ -212,7 +212,7 @@ function respondToIntent(recipientID, userProfile, parsed) {
         return
  
       case 'leaderboard':
-        send.sendMessage(recipientID, [200, getResponseToLeaderboard(recipientID)], null, true);
+        send.sendMessage(recipientID, getResponseToLeaderboard(recipientID, userProfile), null, true);
         return
 
 
@@ -1144,7 +1144,8 @@ function getResponseToNo() {
 
 
 //Count how many times you've referred...
-function getResponseToLeaderboard(recipientID) {
+function getResponseToLeaderboard(recipientID, userProfile) {
+  console.log(userProfile)
 
     // direct_referrals = db.mongo.coll.find({"num_referrals":{"$exists":recipientID}}).count()
 
@@ -1156,9 +1157,11 @@ function getResponseToLeaderboard(recipientID) {
     //                         new: true
                         // }
 
-    text = "Hey, you've now referred x people. That puts you in x place";
-
-    return text;
+    return [
+      200, "You've referred " + userProfile.num_referrals + " people",
+      600, "Together you've saved " + (2 * userProfile.num_nets) + " lives",
+      1200, "That puts you in #XXX place",
+    ]
 }
 
 function getResponseToImageInput(userProfile) {
