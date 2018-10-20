@@ -146,9 +146,9 @@ function processMessage(recipientID, userProfile, messageText) {
 
 function respondToQuestion(recipientID, userProfile, question, subject) {
   switch (subject) {
-    case 'score':
-      send.sendMessage(recipientID, getResponseToLeaderboard(recipientID, userProfile), null, true);
-      return
+    // case 'score':
+    //   send.sendMessage(recipientID, getResponseToLeaderboard(recipientID, userProfile), null, true);
+    //   return
 
     case 'english':
       send.sendMessage(recipientID, [1000, "Sorry, English is the only language I speak"], null, true);
@@ -211,10 +211,10 @@ function respondToIntent(recipientID, userProfile, parsed) {
         send.sendMessage(recipientID, [200, getResponseToNo()], null, true);
         return
  
-      case 'leaderboard':
-        send.sendMessage(recipientID, getResponseToLeaderboard(recipientID, userProfile), null, true);
-        return
-
+//       case 'leaderboard':
+//         send.sendMessage(recipientID, getResponseToLeaderboard(recipientID, userProfile), null, true);
+//         return
+// 
 
       case 'reset':
         sendIntroText(recipientID, userProfile, null);
@@ -1157,7 +1157,7 @@ function getResponseToLeaderboard(recipientID, userProfile) {
     //                         new: true
                         // }
 
-  db.users.count({'num_referrals': { $gt: userProfile.num_referrals }}, function(err, peopleAhead) {
+  db.mongo.users.count({'num_referrals': { $gt: userProfile.num_referrals }}, function(err, peopleAhead) {
     if (err) { console.error("MongoDB error: " + err); }
 
     var score = peopleAhead + 1
