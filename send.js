@@ -253,6 +253,74 @@ function sendImage(recipientID, imageURL) {
 }
 
 
+function sendMozzy(recipientID, userProfile) {
+
+    console.log("sendMozzy (" + recipientID + "); called");
+
+    // Set the title to use
+    var titleToUse = "Zap!";
+
+    // Image URL
+    var mozzyImageURL = "http://www.projectedgames.com/amf/mozzy.png";
+
+    // Add to mozzy database ...
+
+    var currentTimestamp = new Date().getTime();
+
+    var queryJSON = 
+        {
+            "recipient": parseInt(recipientID),
+            "time_sent": parseInt(currentTimestamp)
+        };
+    //console.log("Query JSON (mozzys.insert): " + queryJSON);
+
+    db.mongo.mozzys.insert(
+        queryJSON,
+        function(err, results){
+
+            //console.log("MongoDB results: " + JSON.stringify(results));
+            
+            if (err) {
+                console.error("MongoDB error: " + err);
+                console.error("Couldn't send mozzy to user due to DB insertion error: recipientID = " + recipientID);
+                logErrorInMongo("Couldn't send mozzy to user due to DB insertion error: recipientID = " + recipientID, recipientID, true);
+            } else {
+                
+            // Send the mozzy to the user
+
+                var data = {
+                    recipient: {
+                        id: recipientID
+                    },
+                    message: {
+                        attachment: {
+                            type: "template",
+                            payload: {
+                                template_type: "generic",
+                                image_aspect_ratio: "square",
+                                elements: [{     
+                                    title: titleToUse,
+                                    image_url: mozzyImageURL,
+                                    buttons: [{
+                                        type: "postback",
+                                        title: "Zap!",
+                                        payload: "zap_" + currentTimestamp
+                                    }],
+                                }]
+                            }
+                        }
+                    }
+                };
+
+                callSendAPI(data, currentTimestamp, recipientID);
+                
+            }
+        }    
+    );
+
+}
+
+
 function share(recipientID) {
 
     sendShareInvitationButton(recipientID);
@@ -317,7 +385,7 @@ function showShareDialogWithMessage(recipientID, message, callback) {
         
         var logText = "Showing Share Dialog to user " + recipientID + ", with message '" + message + "'";
         //console.log(logText);
-        mongodb.logs.insert(
+        db.mongo.logs.insert(
             {
                 "timestamp": new Date().getTime(),
                 "user": parseInt(recipientID),
@@ -372,4 +440,5 @@ module.exports = {
   sendMessage,
   sendImage,
   share,
+  sendMozzy
 }

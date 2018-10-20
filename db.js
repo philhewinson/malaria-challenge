@@ -4,7 +4,7 @@ if (process.env.MONGODB_URI) {
     mongo_db_url = process.env.MONGODB_URI;
 }
 
-var collections = ['users', 'logs', 'messages'];
+var collections = ['users', 'logs', 'messages', 'mozzys'];
 var mongojs = require('mongojs');
 
 var SLEEP_MODE = process.env.SLEEP_MODE == "true"

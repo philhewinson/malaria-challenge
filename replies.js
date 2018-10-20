@@ -8,14 +8,7 @@ var {parseIntent} = require('./grammar')
 
 function sendIntroMessages(recipientID, userProfile) {
     
-    send.sendMessage(recipientID,
-
-        [
-            0, "Hello " + userProfile.first_name + "!",
-            3000, "Welcome to the Malaria Challenge!"
-        ],
-
-    null, false);
+    sendGroupOfMessages(recipientID, userProfile, 0);
     
 }
 
@@ -41,7 +34,8 @@ function sendIntroText(recipientID, userProfile, inviter) {
                                 "gender": userProfile.gender, "num_starts": 1,
                                 "status": "active", "time_joined": currentTimestamp,
                                 "num_messages": 0, "num_message_attachments": 0,
-                                "num_referrals" : 0, "num_recursive_referrals" : 0 } },
+                                "num_referrals" : 0, "num_recursive_referrals" : 0,
+                                "num_zaps": 0 } },
         // new: true,   // return new doc if one is upserted
         upsert: true // insert the document if it does not exist
 
@@ -248,6 +242,238 @@ function processAttachment(recipientID, userProfile, attachment, attachmentURL, 
         send.sendMessage(recipientID, [500, getResponseToUnknownInput(userProfile)], null, false);
 
     }
+}
+
+function zap(recipientID, userProfile, payloadTimestamp) {
+
+    // Get the current time as close as possible to when the zap happened
+    var currentTimestamp = new Date().getTime();
+
+    db.mongo.users.findAndModify(
+        {
+            query: { "user": parseInt(recipientID) },
+            update: { $set: { "status": "active" } }
+        },
+        function(err, results){
+            if (err) { console.error("MongoDB error: " + err); }
+        }
+    );
+
+    // Find how if the user has zapped this mozzy before ...
+
+    db.mongo.mozzys.findAndModify(
+        {
+            query: { "recipient": parseInt(recipientID),
+                     "time_sent": parseInt(payloadTimestamp),
+                     "time_zapped": null },
+            update: { $set: { "time_zapped": parseInt(currentTimestamp) } }
+        },
+        function(err, results){
+            
+            if (err) { console.error("MongoDB error: " + err); }
+
+            if (results == null) {
+
+                // An unzapped mozzy with this payloadTimestamp doesn't exist, so find out if there is a zapped one or not and return the appropriate messge
+
+                db.mongo.mozzys.find(
+                {
+                    "recipient": parseInt(recipientID),
+                    "time_sent": parseInt(payloadTimestamp)
+                }, function(err, mongoMozzyResults){    
+                    
+                    if (err) { console.error("MongoDB error: " + err); }
+                    
+                    if (mongoMozzyResults.length <= 0) {
+
+                        // There is no mozzy with the payloadTimestamp specified ...
+
+                        send.sendMessage(recipientID, [500, "That's weird - you're trying to zap a mozzy that doesn't exist!"], null, false);
+
+                    } else if (mongoMozzyResults[0].time_zapped != null) {
+
+                        // Previously zapped ...
+                        send.sendMessage(recipientID, [500, getAlreadyZappedText(userProfile)], null, false);
+
+                    }
+                });
+
+            } else {
+
+                // Found the unzapped mozzy and marked it as zapped ...
+
+                // Increment num_zaps for this user in the user's table and later the other zap metrics (assuming they exist already,
+                // otherwise do nothing) ...
+
+                db.mongo.users.findAndModify(
+                    {
+                        query: { "user": parseInt(recipientID), "num_zaps": {$ne:null} },
+                        update: { $inc: { "num_zaps": 1 } },
+                        new: true
+                    },
+                    function(err, results2){
+
+                        if (err) { console.error("MongoDB error: " + err); }
+
+                        if (results2 != null) {
+
+                            var newNumZaps = results2.num_zaps;
+
+                            // Send the zap response
+                            sendZapResponse(recipientID, userProfile, payloadTimestamp, currentTimestamp, newNumZaps);
+
+                        }
+                    }
+                );
+            }
+        }
+    );
+}
+
+function sendZapResponse(recipientID, userProfile, payloadTimestamp, currentTimestamp, newNumZaps) {
+
+    // Get the zapTime of the most recent mozzy
+
+    var zapTimeRecentMozzy = currentTimestamp - parseInt(payloadTimestamp);
+    var zapTimeRecentMozzyInSeconds = getZapTimeInSeconds(zapTimeRecentMozzy);
+
+    var initialText = "";
+
+    if (zapTimeRecentMozzyInSeconds <= 0.1) {
+        initialText = "Wow, you're a ninja - you can't zap faster than that!";
+    } else if (zapTimeRecentMozzyInSeconds <= 0.2) {
+        initialText = "Incredible speed - I can't believe how fast you zapped that mozzy!";
+    } else if (zapTimeRecentMozzyInSeconds <= 0.3) {
+        initialText = "Woah, that was fast!  Amazing speed!";
+    } else if (zapTimeRecentMozzyInSeconds <= 0.4) {
+        initialText = "Incredibly impressive - how did you zap that mozzy so quickly!?";
+    } else if (zapTimeRecentMozzyInSeconds <= 0.5) {
+        initialText = "Super speedy zapping - congrats!!!";
+    } else if (zapTimeRecentMozzyInSeconds <= 0.7) {
+        initialText = "Impressive reflexes - I didn't expect you to zap so quickly!";
+    } else if (zapTimeRecentMozzyInSeconds <= 0.9) {
+        initialText = "Wow, you zapped in under a second - very impressive!";
+    } else if (zapTimeRecentMozzyInSeconds <= 1) {
+        initialText = "They'll be calling you super-speedy " + userProfile.first_name + " with zapping that fast!";
+    } else if (zapTimeRecentMozzyInSeconds <= 1.2) {
+        initialText = "Very impressive speed!";
+    } else if (zapTimeRecentMozzyInSeconds <= 1.5) {
+        initialText = "Very speedy, I'm really impressed!";
+    } else if (zapTimeRecentMozzyInSeconds <= 1.8) {
+        initialText = "Boom - what a zap!  So stealthy!  I admire how you did that!";
+    } else if (zapTimeRecentMozzyInSeconds <= 2) {
+        initialText = "That mozzy didn't see you coming " + userProfile.first_name + "!";
+    } else if (zapTimeRecentMozzyInSeconds <= 2.5) {
+        initialText = "Another high velocity zap - good job " + userProfile.first_name + "!";
+    } else if (zapTimeRecentMozzyInSeconds <= 3) {
+        initialText = "Very respectable time - have you been practicing!?";
+    } else if (zapTimeRecentMozzyInSeconds <= 3.5) {
+        initialText = "Pretty fast - you must be pleased with those reactions!";
+    } else if (zapTimeRecentMozzyInSeconds <= 4) {
+        initialText = "Great effort - I'm impressed!";
+    } else if (zapTimeRecentMozzyInSeconds <= 5) {
+        initialText = "I can see you hustling to zap that mozzy - a little slow, so stay sharp for the next one!";
+    } else if (zapTimeRecentMozzyInSeconds <= 6) {
+        initialText = "Woah, it took you a little long to zap that one - be careful!!!";
+    } else if (zapTimeRecentMozzyInSeconds <= 8) {
+        initialText = "Woah, that was dangerously close to the 10 second window " + userProfile.first_name + " - stay more alert for the next one!";
+    } else if (zapTimeRecentMozzyInSeconds <= 10) {
+        initialText = "Aaahhh - you were JUST inside the 10 second window - you were incredibly close to getting stung and it'd be game over - be careful!";
+    } else {
+        initialText = "OH NO - it took you over 10 seconds to zap that mozzy and it stung you.  You now have malaria and you'll soon be dead 😢";
+    }
+
+    sendTimeAndPointsText(initialText, zapTimeRecentMozzyInSeconds, recipientID, userProfile, newNumZaps);
+
+}
+
+function sendTimeAndPointsText(initialText, zapTimeRecentMozzyInSeconds, recipientID, userProfile, newNumZaps) {
+
+    var punctuation = "!";
+    if (zapTimeRecentMozzyInSeconds >=1) {
+        punctuation = ".";
+    }
+
+    send.sendMessage(recipientID,
+
+        [
+            200, initialText,
+            500, "You zapped that mozzy in " + getReadableTime(zapTimeRecentMozzyInSeconds, false)
+        ],
+
+        function() {
+
+            sendGroupOfMessages(recipientID, userProfile, newNumZaps);
+
+        }
+
+    , false);
+
+}
+
+
+function sendGroupOfMessages(recipientID, userProfile, newNumZaps) {
+
+switch (newNumZaps) {
+
+    case 0:
+
+        send.sendMessage(recipientID,
+
+            [
+                0, "Hi " + userProfile.first_name + "!",
+                3000, "Welcome to the Malaria Challenge!"
+            ],
+    
+            function() {
+                setTimeout(function() {
+                    send.sendMozzy(recipientID);
+                }, 3000);
+            }
+        );
+
+        break;
+
+    case 1:
+
+        send.sendMessage(recipientID,
+
+            [
+                2000, "Do you know what malaria is?"
+            ],
+    
+            null
+        );
+
+        break; 
+
+}
+
+}
+
+
+function getZapTimeInSeconds(zapTime) {
+
+var zapTimeInSeconds = 0.1;
+
+// If time <2300 ms, return 0.1
+// If time between 2300ms and 5000ms, return between 0.1 and 0.5 (linear progression)
+// If time >5000ms, return (x-5000)/1000 + 0.5 (i.e. time above 5s plus 0.5s)
+// Always round to nearest 0.1 (single decimal place)
+
+if (zapTime >= 2300 && zapTime <= 5000) {
+    zapTimeInSeconds = 0.1 + (zapTime-2300)/2700*0.4;
+} else if (zapTime > 5000) {
+    zapTimeInSeconds = 0.5 + (zapTime-5000)/1000;
+}
+
+if (zapTimeInSeconds < 10) {
+    zapTimeInSeconds = parseFloat((zapTimeInSeconds).toFixed(1));
+} else {
+    zapTimeInSeconds = parseInt((zapTimeInSeconds).toFixed(0));
+}
+
+return zapTimeInSeconds;
 }
 
 
@@ -638,6 +864,37 @@ function getResponseToFileInput(userProfile) {
     
 }
 
+function getAlreadyZappedText(userProfile) {
+    
+    // Get a random number between 1 and 10 inclusive
+    var randomNumber = Math.floor(Math.random() * 5) + 1;
+    
+    var text = "Hey - it looks like you've already zapped this one!";
+    
+    switch (randomNumber) {
+        
+        case 1:
+            text = "Hey - it looks like you've already zapped this one!";
+            break;
+        case 2:
+            text = "Nice try " + userProfile.first_name + "!  You can't zap a zapped mozzy!";
+            break;
+        case 3:
+            text = "You're welcome to zap a mozzy as many times as you want, but it won't matter as it's already dead!";
+            break;
+        case 4:
+            text = "What have you got against this mozzy that you have to keep zapping him!?";
+            break;
+        case 5:
+            text = "You really are on a zapping frenzy!  You'll have to wait for the next mozzy for the zap to count!";
+            break;
+            
+    }
+    
+    return text;
+    
+}
+
 
 
 /* Algorithmic functions */
@@ -680,10 +937,45 @@ function arrayContains(needle, arrhaystack) {
 
 function isNumber(obj) { return !isNaN(parseFloat(obj)) }
 
+function getReadableTime(secondsTotal, shorthand) {
+    
+    var output;
+    
+    if (secondsTotal == 1) {
+        output = secondsTotal + " second";
+    }
+    else if (secondsTotal < 60) {
+        output = secondsTotal + " seconds";
+    } else {
+        
+        var numyears = Math.floor(secondsTotal / 31536000);
+        var numdays = Math.floor((secondsTotal % 31536000) / 86400); 
+        var numhours = Math.floor(((secondsTotal % 31536000) % 86400) / 3600);
+        var numminutes = Math.floor((((secondsTotal % 31536000) % 86400) % 3600) / 60);
+        var numseconds = (((secondsTotal % 31536000) % 86400) % 3600) % 60;
+        
+        output =
+            ( numyears > 0 ? ( numyears + ( (numyears > 1) ? " years" : " year" ) + ( (numdays > 0 || numhours > 0 || numminutes > 0 || numseconds > 0) ? ", " : "" ) ) : "" ) +
+            ( numdays > 0 ? ( numdays + ( (numdays > 1) ? " days" : " day" ) + ( (numhours > 0 || numminutes > 0 || numseconds > 0) ? ", " : "" ) ) : "" ) +
+            ( numhours > 0 ? ( numhours + ( (numhours > 1) ? " hours" : " hour" ) + ( (numminutes > 0 || numseconds > 0) ? ", " : "" ) ) : "" ) +
+            ( numminutes > 0 ? ( numminutes + ( (numminutes > 1) ? " minutes" : " minute" ) + ( (numseconds > 0) ? ", " : "" ) ) : "" ) +
+            ( numseconds > 0 ? ( numseconds + ( (numseconds > 1) ? " seconds" : " second" ) ) : "" );
+    }
+    
+    if (shorthand == true) {
+        output = output.replace("hour", "hr");
+        output = output.replace("minute", "min");
+        output = output.replace("second", "sec");
+    }
+    
+    return output;
+}
+
 module.exports = {
   processMessage,
   processAttachment,
   processUnknownInput,
   sendIntroText,
+  zap
 }
 
