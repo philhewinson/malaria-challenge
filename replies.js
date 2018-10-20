@@ -198,6 +198,18 @@ function respondToIntent(recipientID, userProfile, parsed) {
         send.sendMessage(recipientID, [2000, "What's wrong?"], null, true);
         return
 
+      case 'persuade':
+         send.sendMessage(recipientID, [200, getResponseToPersuade()], null, true); 
+      return
+
+      case 'buy':
+         send.sendMessage(recipientID, [200, "Click here to donate!"], null, true);
+      return
+
+      case 'paid':
+         send.sendMessage(recipientID, [200, "Finally, a bit of restbite from these pesky Mozzies AND you're now protecting 2 lives. Thank you so much!"], null, true);
+      return
+
       case 'unknown':
       default:
         send.sendMessage(recipientID, [500, getResponseToUnknownInput(userProfile)], null, true);
@@ -707,6 +719,35 @@ function getResponseToYes() {
             text = "Great";
             break;
 
+    }
+
+    return text;
+
+}
+
+function getResponseToPersuade() {
+
+    // Get a random number between 1 and 5 inclusive
+    var randomNumber = Math.floor(Math.random() * 4) + 1;
+    
+    
+    switch (randomNumber) {
+        
+        case 1:
+            text = "For half the price of a cup of coffee - just £1.50, you can provide a net that could keep 2 people safe for 2 years.";
+            break;
+        case 2:
+            text = "The anti-malaria foundation will make sure that every penny makes it to the people who need it.";
+            break;
+        case 3:
+            text = "Did you know that we mosquitoes kill ... every year, but the anti-malaria foundation provide pesky nets that stop me from getting my teeth into you.";
+            break;
+        case 4:
+            text = "Apparently the nets the anti-malaria foundation provide both empower local business and can protect 2 lives for 3 years."
+            break
+        case 5:
+            text = "But... people are dying."
+            break;
     }
 
     return text;

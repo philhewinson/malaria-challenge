@@ -41,6 +41,11 @@ const lexer = moo.compile({
       language: ['english', 'language'],
 
       negation: ['never', 'no', 'not', "don't", "won't", "shan't", "can't"],
+
+      persuade: ['might','maybe','unsure','consider'],      
+      paid: ['paid', 'complete'],
+        
+
     }),
   },
 })
@@ -73,6 +78,9 @@ function parseIntent(message) {
     'no',
     'greeting',
     'invite',
+    'buy',
+    'persuade',
+    'paid',
     'question',
     'buy',
     'bye',
