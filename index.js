@@ -233,7 +233,7 @@ app.post('/webhook', function (req, res) {
                             ref_for_logging = ref_for_logging + " (" + JSON.stringify(event.referral) + ")";
                         }
 
-                      var inviter = (event.referral.ref.replace("invite_", ""))|0;
+                      var inviter = parseInt(event.referral.ref.replace("invite_", ""));
                         
                       console.log("Ref parameter for user " + senderID + " = " + ref_for_logging + " [through Referral (existing user)]");
 
