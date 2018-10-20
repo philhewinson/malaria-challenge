@@ -211,7 +211,12 @@ function respondToIntent(recipientID, userProfile, parsed) {
       case 'no':
         send.sendMessage(recipientID, [200, getResponseToNo()], null, true);
         return
-        
+ 
+      case 'leaderboard':
+        send.sendMessage(recipientID, [200, getResponseToLeaderboard(recipientID)], null, true);
+        return
+
+
       case 'reset':
         sendIntroText(recipientID, userProfile, null);
         return
@@ -223,6 +228,7 @@ function respondToIntent(recipientID, userProfile, parsed) {
       case 'greeting':
         send.sendMessage(recipientID, [1000, "Hi " + userProfile.first_name + ", Midge here, coming to get you."], function() { send.sendMozzy(recipientID);}, true);
         return
+
 
       case 'gratitude':
         send.sendMessage(recipientID, [1000, "You're very welcome " + userProfile.first_name + "!"], null, true);
@@ -1135,6 +1141,25 @@ function getResponseToNo() {
     
     return text;
     
+}
+
+
+//Count how many times you've referred...
+function getResponseToLeaderboard(recipientID) {
+
+    // direct_referrals = db.mongo.coll.find({"num_referrals":{"$exists":recipientID}}).count()
+
+
+    //                 db.mongo.users.find(
+    //                     {
+    //                         query: { "user": parseInt(inviter) },
+    //                         update: { $inc: { "num_referrals": 1, "num_recursive_referrals": 1 } },
+    //                         new: true
+                        // }
+
+    text = "Hey, you've now referred x people. That puts you in x place";
+
+    return text;
 }
 
 function getResponseToImageInput(userProfile) {

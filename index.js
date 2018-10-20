@@ -631,6 +631,7 @@ function receivedPostback(event, userProfile) {
             
             // Check if this user came from another user
             var valid_inviter = null;
+            ref = ref_for_logging;
             if (ref != null && ref.includes("invite_")) {
                 
                 // This is an invitation from another user, so get the id of the inviter

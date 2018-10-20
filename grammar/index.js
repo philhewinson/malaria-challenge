@@ -45,6 +45,7 @@ const lexer = moo.compile({
 
       persuade: ['might','maybe','unsure','consider', 'convinced'],
       paid: ['paid', 'complete'],
+      leaderboard: ['position','referred','referral','score','leaderboard','table']
     }),
   },
 })
@@ -77,6 +78,7 @@ function parseIntent(message) {
     'reset',
     'persuade',
     'paid',
+    'leaderboard',
     'bye',
     'greeting',
     'question',
