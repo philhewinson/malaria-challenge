@@ -215,8 +215,8 @@ function respondToIntent(recipientID, userProfile, parsed) {
 
       case 'persuade':
         send.sendMessage(recipientID, randomChoice([
-          [0, "How", 100, "Can", 100, "you", 100, "be", 100, "so", 100, "heartless."]
-          [0, "Fine", 500, "I'll set my mozzie friends on you."]
+          [0, "How", 100, "Can", 100, "you", 100, "be", 100, "so", 100, "heartless."],
+          [0, "Fine", 500, "I'll set my mozzie friends on you."],
           [200, "The anti-malaria foundation will make sure that every penny makes it to the people who need it."],
           [0, "Did you know that we mosquitoes kill ... every year, but the anti-malaria foundation provide pesky nets that stop me from getting my teeth into you."],
           [0, "That's understandable", 400,  "But, apparently the nets the anti-malaria foundation provide both empower local business and can protect 2 lives for 3 years."],
