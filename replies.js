@@ -783,5 +783,6 @@ module.exports = {
   processMessage,
   processAttachment,
   processUnknownInput,
+  sendIntroText,
 }
 

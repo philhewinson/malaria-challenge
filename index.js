@@ -458,7 +458,7 @@ function receivedMessage(event, userProfile) {
 
                 // If the user doesn't exist, try to start the challenge
 
-                sendIntroText(senderID, userProfile, null);
+                replies.sendIntroText(senderID, userProfile, null);
 
             } else {
 
@@ -621,7 +621,7 @@ function receivedPostback(event, userProfile) {
                 ad_ref = event.postback.referral.ref;
             }
 
-            sendIntroText(senderID, userProfile, valid_inviter);
+            replies.sendIntroText(senderID, userProfile, valid_inviter);
             
         } else if (payload == "My Ranking") {
             // TO IMPLEMENT ...
