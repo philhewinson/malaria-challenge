@@ -38,6 +38,32 @@ function logError(error, userID) {
     
 }
 
+function incrementNumRecursiveReferrals(inviter) {
+
+    mongodb.users.findAndModify(
+        {
+            query: { "user": parseInt(inviter) },
+            update: { $inc: { "num_recursive_referrals": 1 } },
+            new: true
+        },
+        function(err, results){
+
+            if (err) { console.error("MongoDB error: " + err); }
+
+            var inviterParent = results.referred_by;
+
+            if (inviterParent != null && isNumber(inviterParent)) {
+
+                incrementNumRecursiveReferrals(inviterParent);
+
+            }
+
+        }
+    );
+
+}
+
+
 function purgeLogs() {
     
     var currentTimestamp = new Date().getTime();

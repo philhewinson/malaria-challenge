@@ -4,6 +4,7 @@ var bodyParser = require('body-parser');
 var request = require('request');
 require('dotenv').config();
 
+var send = require('./send')
 var replies = require('./replies')
 var db = require('./db')
 
@@ -17,10 +18,7 @@ app.use(bodyParser.json());
 // Only set this to true if all is broken and you need time to fix it - it will put the game on hold for everyone, returning a standard
 // message everytime they send anything!
 
-var SLEEP_MODE = false;   
-if (process.env.SLEEP_MODE == true || process.env.SLEEP_MODE == "true") {
-  SLEEP_MODE = true;
-}
+var SLEEP_MODE = process.env.SLEEP_MODE == "true"
 
 
 /* Messenger Platform variables */
@@ -110,16 +108,6 @@ app.get('/webhook', function(req, res) {
     
 });
 
-
-/*******/
-
-/* SUPPORTING FUNCTIONS */
-
-/*******/
-
-/* Logging functions */
-
-// Function to record errors in MongoDB
 
 /*******/
 
@@ -214,7 +202,7 @@ app.post('/webhook', function (req, res) {
 
                             }
                         
-                            replies.sendTypingIndicator(senderID, true);
+                            send.sendTypingIndicator(senderID, true);
 
                             // Get the user's profile information (from the user's table, otherwise from graph.facebook.com)
                             getValidUserProfile(senderID, function(validUserProfile) {
@@ -358,7 +346,7 @@ function getValidUserProfile(recipientID, callback) {
                 if (error) {
                     console.error(JSON.stringify(error));
                     logErrorInMongo(JSON.stringify(error), recipientID);
-                    replies.sendTypingIndicator(recipientID, false);
+                    send.sendTypingIndicator(recipientID, false);
                 } else {
 
                     var userProfile = null;
@@ -477,7 +465,7 @@ function receivedMessage(event, userProfile) {
 
                 // If the user doesn't exist, try to start the challenge
 
-                replies.sendIntroText(senderID, userProfile, null);
+                sendIntroText(senderID, userProfile, null);
 
             } else {
 

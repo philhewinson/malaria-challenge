@@ -2,13 +2,142 @@
 var request = require('request');
 
 var db = require('./db')
-
-var PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN; 
-var SLEEP_MODE = process.env.SLEEP_MODE == "true"
+var send = require('./send')
 
 
+function sendIntroMessages(recipientID, userProfile) {
+    
+    sendMessage(recipientID,
+
+        [
+            0, "Hi " + userProfile.first_name + "!",
+            3000, "Welcome to the Malaria Challenge!"
+        ],
+
+    null, false);
+    
+}
+
+
+function sendIntroText(recipientID, userProfile, inviter) {
+    
+    // Get current time for the time_joined field for a new user
+    var currentTimestamp = new Date().getTime();
+
+    // Get these attributes for insertion ...
+
+    var inviterForQuery = null;
+    if (isNumber(inviter)) {
+        inviterForQuery = parseInt(inviter);
+    }
+
+    db.mongo.users.findAndModify({
+
+        query: { "user": parseInt(recipientID) },
+        update: { $setOnInsert: { "user": parseInt(recipientID), "bought_net": false, "referred_by": inviterForQuery, 
+                                "first_name": userProfile.first_name, "last_name": userProfile.last_name,
+                                "profile_pic": userProfile.profile_pic, "locale": userProfile.locale, "timezone": parseInt(userProfile.timezone),
+                                "gender": userProfile.gender, "num_starts": 1,
+                                "status": "active", "time_joined": currentTimestamp,
+                                "num_messages": 0, "num_message_attachments": 0,
+                                "num_referrals" : 0, "num_recursive_referrals" : 0 } },
+        // new: true,   // return new doc if one is upserted
+        upsert: true // insert the document if it does not exist
+
+    },
+        function(err, results){
+            
+            if (err) { console.error("MongoDB error: " + err); }
+
+            // results returned is the old document, so will be null if there wasn't one before and the user didn't exist
+
+            var userExisted = false;
+            if (results != null) {
+                userExisted = true;
+            }
+
+            if (userExisted == false) {
+
+                // If the user didn't exist, a new one has been created - so reward the inviter if one exists and send the intro messages ...
+                    // Plus increment the appropriate num_referrals and num_recursive_referrals values
+
+                if (inviter != null) {
+
+                    db.mongo.users.findAndModify(
+                        {
+                            query: { "user": parseInt(inviter) },
+                            update: { $inc: { "num_referrals": 1, "num_recursive_referrals": 1 } },
+                            new: true
+                        },
+                        function(err, results){
+
+                            if (err) { console.error("MongoDB error: " + err); }
+                            //console.log("MongoDB results: " + JSON.stringify(results));
+
+                            sendMessage(inviter,
+
+                                [
+                                    200, "Your friend " + userProfile.first_name + " " + userProfile.last_name + " just started the Malaria Challenge - we'll let you know if they buy a malaria net!"
+                                ],
+
+                            null, false);
+
+                            // Increment the appropriate num_recursive_referrals values in all "parents" of the inviter ...
+                            var inviterParent = results.referred_by;
+                            
+                            if (inviterParent != null && isNumber(inviterParent)) {
+                
+                                incrementNumRecursiveReferrals(inviterParent);
+                
+                            }
+
+                        }
+                    );
+
+                }
+
+                sendIntroMessages(recipientID, userProfile);
+
+            } else {
+
+                // Otherwise, the user already exists, so firstly check that at least 30 seconds have passed since they last joined
+                    // If not, don't do anything as it's probably a duplicate "Get Started", so should be ignored
+                    // Otherwise, just share the intro text again, but leave the key parts of user fields in database as-is
+
+                db.mongo.users.find({ "user": parseInt(recipientID) }, function(err, mongoUserResults){
+
+                    if (err) { console.error("MongoDB error: " + err); }
+
+                    var xSecondsAfterUserJoined = parseInt(mongoUserResults[0].time_joined) + (30*1000);
+                    if (currentTimestamp > xSecondsAfterUserJoined) {
+
+                        // User exists, 30 seconds have passed since they joined, so ...
+                            // Send intro messages
+                            // Update some fields for this user in the users table
+
+                        sendIntroMessages(recipientID, userProfile);
+
+                        // Also, increment the num_starts field
+                        db.mongo.users.findAndModify(
+                            {
+                                query: { "user": parseInt(recipientID) },
+                                update: { $inc: { "num_starts": 1 }, $set: { "status": "active" } }
+                            },
+                            function(err, results){
+                                if (err) { console.error("MongoDB error: " + err); }
+                            }
+                        );
+
+                    }
+
+                });
+
+            }
+        }
+    );
+}
 function processUnknownInput(recipientID, userProfile) {
-  sendMessage(recipientID, [500, getResponseToUnknownInput(userProfile)], null, true);
+  send.sendMessage(recipientID, [500, getResponseToUnknownInput(userProfile)], null, true);
 }
 
 function processMessage(recipientID, userProfile, messageText) {
@@ -45,7 +174,7 @@ function processMessage(recipientID, userProfile, messageText) {
     
     if (messageTextLowerCaseNoWhiteSpaces == "?" ) {
 
-        sendMessage(recipientID, [200, "?"], null, true);
+        send.sendMessage(recipientID, [200, "?"], null, true);
         
     } else if (messageTextLowerCaseNoWhiteSpaces == "ok" || messageTextLowerCaseNoWhiteSpaces == "okay" ||
             messageTextLowerCaseNoWhiteSpaces == "k" || messageTextLowerCaseNoWhiteSpaces == "yes" ||
@@ -60,15 +189,15 @@ function processMessage(recipientID, userProfile, messageText) {
             messageTextLowerCaseNoWhiteSpaces == "ofcourse" || messageTextLowerCaseNoWhiteSpaces == "occasionally"  ||
             messageTextLowerCaseNoWhiteSpaces == "great" || messageTextLowerCaseNoWhiteSpaces == "np") {
 
-        sendMessage(recipientID, [200, "👍"], null, true);
+        send.sendMessage(recipientID, [200, "👍"], null, true);
         
     } else if (messageTextLowerCaseNoWhiteSpaces == "no" || messageTextLowerCaseNoWhiteSpaces == "nope" ) {
 
-        sendMessage(recipientID, [200, getResponseToNo()], null, true);
+        send.sendMessage(recipientID, [200, getResponseToNo()], null, true);
         
     } else if (messageTextLowerCaseNoWhiteSpaces == "yo" ) {
 
-        sendMessage(recipientID, [200, "Yo!"], null, true);
+        send.sendMessage(recipientID, [200, "Yo!"], null, true);
         
     } else if ( messageTextLowerCaseNoWhiteSpaces.includes("getstarted") ||
                 messageTextLowerCaseNoWhiteSpaces.includes("startover") ||
@@ -88,11 +217,11 @@ function processMessage(recipientID, userProfile, messageText) {
 
         // TO IMPLEMENT ...
         // viewScore(recipientID, false, true, null);
-        sendMessage(recipientID, [500, getResponseToUnknownInput(userProfile)], null, true);
+        send.sendMessage(recipientID, [500, getResponseToUnknownInput(userProfile)], null, true);
 
     } else if (messageTextLowerCase.includes("help")) {
 
-        sendMessage(recipientID, [2000,
+        send.sendMessage(recipientID, [2000,
                             "What's wrong?"],
                     null, true);
 
@@ -103,11 +232,11 @@ function processMessage(recipientID, userProfile, messageText) {
                 (arrayContains("hey", messageTextLowerCaseWordsArrayAlphanumericOnly)) ) {
 
         // Answer to "Hi"
-        sendMessage(recipientID, [1000, "Hi " + userProfile.first_name + ", how are you today?"], null, true);
+        send.sendMessage(recipientID, [1000, "Hi " + userProfile.first_name + ", how are you today?"], null, true);
 
     }  else if ( messageTextLowerCase.includes("english") ) {
 
-        sendMessage(recipientID, [1000, "Sorry, English is the only language I speak"], null, true);
+        send.sendMessage(recipientID, [1000, "Sorry, English is the only language I speak"], null, true);
 
     } else if ( messageTextLowerCase.includes("bye") ||
                 messageTextLowerCase.includes("gtg") ||
@@ -116,16 +245,16 @@ function processMessage(recipientID, userProfile, messageText) {
                 messageTextLowerCase.includes("see you") ||
                 arrayContains("cya", messageTextLowerCaseWordsArrayAlphanumericOnly) ) {
 
-        sendMessage(recipientID, [1000, "Bye " + userProfile.first_name + "!"], null, true);
+        send.sendMessage(recipientID, [1000, "Bye " + userProfile.first_name + "!"], null, true);
 
     } else if (messageTextLowerCase.includes("?")) {
 
-        sendMessage(recipientID, [2000, getResponseToQuestionInput(messageText, userProfile)], null, true);
+        send.sendMessage(recipientID, [2000, getResponseToQuestionInput(messageText, userProfile)], null, true);
 
     } else if ( messageTextLowerCase.includes("sorry") ||
                 messageTextLowerCase.includes("soz") ) {
 
-            sendMessage(recipientID, [1000, "No problem!"], null, true);
+            send.sendMessage(recipientID, [1000, "No problem!"], null, true);
 
     } else if ( arrayContains("yes", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
                 arrayContains("yeah", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
@@ -134,17 +263,17 @@ function processMessage(recipientID, userProfile, messageText) {
                 arrayContains("cheers", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
                 arrayContains("sure", messageTextLowerCaseWordsArrayAlphanumericOnly) ) {
 
-        sendMessage(recipientID, [200, getResponseToYes()], null, true);
+        send.sendMessage(recipientID, [200, getResponseToYes()], null, true);
         
     } else if ( arrayContains("no", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
                 arrayContains("nope", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
                 arrayContains("nop", messageTextLowerCaseWordsArrayAlphanumericOnly) ) {
 
-        sendMessage(recipientID, [200, getResponseToNo()], null, true);
+        send.sendMessage(recipientID, [200, getResponseToNo()], null, true);
         
     } else if (arrayContains("yo", messageTextLowerCaseWordsArrayAlphanumericOnly)) {
 
-        sendMessage(recipientID, [200, "Yo!"], null, true);
+        send.sendMessage(recipientID, [200, "Yo!"], null, true);
         
     } else if ( arrayContains("ok", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
                 arrayContains("okay", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
@@ -152,7 +281,7 @@ function processMessage(recipientID, userProfile, messageText) {
                 arrayContains("oh", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
                 arrayContains("o", messageTextLowerCaseWordsArrayAlphanumericOnly) ) {
 
-        sendMessage(recipientID, [200, getResponseToYes()], null, true);
+        send.sendMessage(recipientID, [200, getResponseToYes()], null, true);
         
     } else if ( messageTextLowerCase.includes("thank") || 
                 messageTextLowerCase.includes("thx") || 
@@ -161,16 +290,16 @@ function processMessage(recipientID, userProfile, messageText) {
                 messageTextLowerCase.includes("thk you") || 
                 messageTextLowerCase.includes("thks") ) {
 
-        sendMessage(recipientID, [1000, "You're very welcome " + userProfile.first_name + "!"], null, true);
+        send.sendMessage(recipientID, [1000, "You're very welcome " + userProfile.first_name + "!"], null, true);
 
     } else if (emojisFromMessageText.length == messageText.length) {
         
         // Only sent emojis, so send the same one back
-        sendMessage(recipientID, [500, messageText], null, true);
+        send.sendMessage(recipientID, [500, messageText], null, true);
         
     } else {
 
-        sendMessage(recipientID, [500, getResponseToUnknownInput(userProfile)], null, true);
+        send.sendMessage(recipientID, [500, getResponseToUnknownInput(userProfile)], null, true);
 
     }
 
@@ -189,29 +318,29 @@ function processAttachment(recipientID, userProfile, attachment, attachmentURL, 
             stickerID == "369239383222810") {
 
             // Facebook thumbs up, so send a thumbs up back
-            sendMessage(recipientID, [200, "👍"], null, false);
+            send.sendMessage(recipientID, [200, "👍"], null, false);
 
         } else {
             
-            sendMessage(recipientID, [2000, getResponseToImageInput(userProfile)], null, false);
+            send.sendMessage(recipientID, [2000, getResponseToImageInput(userProfile)], null, false);
             
         }
 
     } else if (attachment.type == "video") {
 
-        sendMessage(recipientID, [6000, getResponseToVideoInput(userProfile)], null, false);
+        send.sendMessage(recipientID, [6000, getResponseToVideoInput(userProfile)], null, false);
 
     } else if (attachment.type == "audio") {
 
-        sendMessage(recipientID, [6000, getResponseToAudioInput(userProfile)], null, false);
+        send.sendMessage(recipientID, [6000, getResponseToAudioInput(userProfile)], null, false);
 
     } else if (attachment.type == "file") {
 
-        sendMessage(recipientID, [3000, getResponseToFileInput(userProfile)], null, false);
+        send.sendMessage(recipientID, [3000, getResponseToFileInput(userProfile)], null, false);
 
     } else {
 
-        sendMessage(recipientID, [500, getResponseToUnknownInput(userProfile)], null, false);
+        send.sendMessage(recipientID, [500, getResponseToUnknownInput(userProfile)], null, false);
 
     }
 }
@@ -220,250 +349,6 @@ function processAttachment(recipientID, userProfile, attachment, attachmentURL, 
 /* Send functions */
 
 
-function callSendAPI(messageData, recipientID) {
-    
-    var URI = 'https://graph.facebook.com/v2.6/me/messages';
-    
-    request({
-        
-        uri: URI,
-        qs: { access_token: PAGE_ACCESS_TOKEN },
-        method: 'POST',
-        json: messageData
-
-        }, function (error, response, body) {
-        
-            // Log request and response ...
-            if (SLEEP_MODE == false) {
-                db.mongo.logs.insert(
-                    {
-                        "timestamp": new Date().getTime(),
-                        "user": parseInt(recipientID),
-                        "type": "send",
-                        "log": URI + " posted with PAGE_ACCESS_TOKEN and JSON: " + JSON.stringify(messageData) + " -> " + JSON.stringify(body),
-                    },
-                    function(err, results){
-                        if (err) { console.error("MongoDB error: " + err); }
-                    }    
-                );
-                //console.log(URI + " posted with PAGE_ACCESS_TOKEN and JSON: " + JSON.stringify(messageData) + " -> " + JSON.stringify(body));
-            }
-        
-            if (body != null && body.error == null && response.statusCode == 200) {
-                
-                var bodyRecipientID = body.recipient_id;
-                var messageID = body.message_id;
-
-                // console.log("Successfully sent generic message with id %s to recipient %s", messageID, bodyRecipientID);
-                
-                // If the user's status is blocked or policy, set it to active
-                if (SLEEP_MODE == false) {
-                    db.mongo.users.findAndModify(
-                        {
-                            query: {$or:[
-                                { "status":{$eq:"blocked"}, "user": parseInt(bodyRecipientID) },
-                                { "status":{$eq:"policy"}, "user": parseInt(bodyRecipientID) }
-                            ]},
-                            update: { $set: { "status": "active" } }
-                        },
-                        function(err, results){
-
-                            if (err) { console.error("MongoDB error: " + err); }
-                            //console.log("MongoDB results: " + JSON.stringify(results));
-                        }
-                    );
-                }
-
-            } else {
-                
-                if (body != null && body.error != null && body.error.code == 200 && SLEEP_MODE == false) {
-
-                    // If the body.error.code is 200, then update the user's status to "blocked"
-                        // Ref: https://developers.facebook.com/docs/messenger-platform/send-api-reference/errors
-                    
-                    db.mongo.users.findAndModify(
-                        {
-                            query: { "user": parseInt(recipientID) },
-                            update: { $set: { "status": "blocked" } }
-                        },
-                        function(err, results){
-
-                            if (err) { console.error("MongoDB error: " + err); }
-                            //console.log("MongoDB results: " + JSON.stringify(results));
-                        }
-                    );
-                    
-                } else if (body != null && body.error != null && body.error.code == 10 && SLEEP_MODE == false) {
-                    
-                    // If the body.error.code is 10, then update the user's status to "policy"
-                        // Ref: https://developers.facebook.com/docs/messenger-platform/policy-overview
-
-                    db.mongo.users.findAndModify(
-                        {
-                            query: { "user": parseInt(recipientID) },
-                            update: { $set: { "status": "policy" } }
-                        },
-                        function(err, results){
-
-                            if (err) { console.error("MongoDB error: " + err); }
-                            //console.log("MongoDB results: " + JSON.stringify(results));
-                        }
-                    );
-                } else {
-
-                    if (body != null) {
-                        logErrorInMongo("Error in return Body from https://graph.facebook.com/v2.6/me/messages: " + JSON.stringify(body), recipientID);
-                    }
-
-                }
-                
-                console.error("Unable to send message.");
-                //logErrorInMongo("Unable to send message.", recipientID);
-                if (error != null) {
-                    console.error("Error: " + JSON.stringify(error));
-                    logErrorInMongo("Error: " + JSON.stringify(error), recipientID);
-                } 
-                if (response != null) {
-                    //console.error("Response: " + JSON.stringify(response));
-                }
-                if (body != null) {
-                    console.error("Body: " + JSON.stringify(body));
-                }
-            }
-        }
-   ).on('error', function(e) {
-    
-        // Catch error
-
-        var errorMessage = 'Error on https://graph.facebook.com/v2.6/me/messages: ' + e.message;
-        console.error(errorMessage);
-        logErrorInMongo(errorMessage, recipientID);
-
-    });  
-}
-
-function sendTypingIndicator(recipientID, on) {
-    
-    var senderAction = "typing_off";
-    if (on) {
-        senderAction = "typing_on";
-    }
-    
-    var data = {
-        recipient: {
-            id: recipientID
-        },
-        sender_action: senderAction
-    };
-    callSendAPI(data, recipientID);
-}
-
-function sendMessage(recipientID, messageTextArray, callback, logInMessagesTable) {
-
-    // console.log("Sending message to user ... " + recipientID);
-
-    var thisTimeout = messageTextArray[0];
-
-    if (thisTimeout > 0) {
-        
-        // Typing indicator, so firstly wait 500ms, then send it for the duration specified ...
-        
-        setTimeout(function() {
-            sendTypingIndicator(recipientID, true);
-            setTimeout(function() {
-                sendMessageInner(recipientID, messageTextArray, callback, logInMessagesTable);
-            }, thisTimeout);
-        }, 500);
-        
-    } else {
-        
-        // No typing indicator, so just send the message
-        sendMessageInner(recipientID, messageTextArray, callback, logInMessagesTable);
-        
-    }
-}
-
-function sendMessageInner(recipientID, messageTextArray, callback, logInMessagesTable) {
-    
-    var thisMessage = messageTextArray[1];
-
-    // Standard text message
-
-    if (thisMessage != "") {
-
-        // Log this message if you should
-
-        if (logInMessagesTable && SLEEP_MODE == false) {
-
-            var currentTimestamp = new Date().getTime();
-
-            var queryJSON = 
-                {
-                    "timestamp": parseInt(currentTimestamp),
-                    "user": parseInt(recipientID),
-                    "message": thisMessage,
-                    "response": true
-                };
-            //console.log("Query JSON (messages.insert): " + queryJSON);
-
-            db.mongo.messages.insert(
-                queryJSON,
-                function(err, results){
-                    if (err) { console.error("MongoDB error: " + err); }
-                    //console.log("MongoDB results: " + JSON.stringify(results));
-                }    
-            );
-        }
-
-        // Then send it
-        
-        var messageData = {
-            recipient: {
-                id: recipientID
-            },
-            message: {
-                text: thisMessage
-            }
-        };
-
-        callSendAPI(messageData, recipientID);
-    }
-
-    // Queue up the next message to send
-    messageTextArray.splice(0, 2);
-
-    if (messageTextArray.length > 0) {
-        // Send the next message
-        sendMessage(recipientID, messageTextArray, callback, logInMessagesTable);
-    } else {
-        // Reached the end of the messages, so switch off the typing indicator and call the callback
-        sendTypingIndicator(recipientID, false);
-        if (callback != null) {
-            callback();
-        }
-    }
-}
-
-function sendImage(recipientID, imageURL) {
-    
-    var data = {
-        recipient: {
-            id: recipientID
-        },
-        message: {
-            attachment: {
-                type: "image",
-                payload: {
-                    url: imageURL,
-                    is_reusable: true
-                }
-            }
-        }
-    };
-
-    callSendAPI(data, recipientID);
-    
-}
 
 /*******/
 
@@ -897,7 +782,5 @@ module.exports = {
   processMessage,
   processAttachment,
   processUnknownInput,
-
-  sendTypingIndicator,
 }
 
