@@ -24,13 +24,14 @@ const lexer = moo.compile({
     match: /[^ \t\n\r\f.!@£$%^&*=_+(){}[\];:"|\/?<>,.`~-]+/,
     type: keywordsIgnoreCase({
       yes: ['y', 'yes', 'yeah', 'ye', 'yea', 'ok', 'sure', 'ya', 'great', 'k', 'fine', 'okay', 'cool', 'o', 'oh'],
-      no: ['n', 'no', 'nope', 'nop', 'nah', 'na', 'never', 'eh'],
+      no: ['n', 'no', 'nope', 'nop', 'nah', 'na', 'eh'],
       invite: ['invite', 'share', 'refer'],
       greeting: ['hello', 'hi', 'yo', 'heya', 'hey', 'he', 'sup'],
       question: ['what', 'who', 'how', 'why', 'where', 'wha', 'which'],
       bye: ['bye', 'gtg', 'leave', 'later', 'away', 'cya', 'stop', 'unsubscribe'],
       gratitude: ['thank', 'thanks', 'thx', 'thks', 'thk', 'tu'],
       reset: ['reset', 'restart', 'wipe'],
+      buy: ['donate', 'buy', 'pay'],
 
       malaria: ['malaria'],
       mosquito: ['mosquito', 'mozzie', 'mozie'],
@@ -38,6 +39,8 @@ const lexer = moo.compile({
       game: ['game', 'challenge'],
       score: ['score', 'rank', 'leaderboard', 'progress'],
       language: ['english', 'language'],
+
+      negation: ['never', 'no', 'not', "don't", "won't", "shan't", "can't"],
     }),
   },
 })
@@ -46,17 +49,22 @@ function parseIntent(message) {
   lexer.reset(message)
   var tokens = Array.from(lexer)
 
-  let content
+  const result = {
+    intent: 'unknown',
+  }
+
   for (let type of [
+    'buy',
     'score',
     'malaria',
     'mosquito',
     'net',
     'game',
-    'score',
   ]) {
     if (tokens.find(tok => tok.type === type)) {
-      content = type
+      result.intent = 'question'
+      result.content = type
+      break
     }
   }
 
@@ -66,6 +74,7 @@ function parseIntent(message) {
     'greeting',
     'invite',
     'question',
+    'buy',
     'bye',
     'reset',
     'invite',
@@ -73,19 +82,25 @@ function parseIntent(message) {
     'help',
     'emoji',
   ]) {
-    if (tokens.find(tok => tok.type === type)) {
-      if (content) {
-        return {intent: type, content} 
+    let tok
+    if (tok = tokens.find(tok => tok.type === type)) {
+      result.intent = type
+      if (type === 'question') {
+        result.question = tok.value
+      } else {
+        delete result.content
       }
-      return {intent: type}
+      break
     }
   }
 
-  if (content) {
-    return {intent: 'question', content}
+  for (let tok of tokens) {
+    if (tok.type === 'negation') {
+      result.negation = true
+    }
   }
 
-  return {intent: 'unknown'}
+  return result
 }
 
 assert.deepEqual(parseIntent('👍'), {intent: 'yes'})
@@ -93,12 +108,17 @@ assert.deepEqual(parseIntent('😀'), {intent: 'emoji'})
 assert.deepEqual(parseIntent(' sure'), {intent: 'yes'})
 assert.deepEqual(parseIntent('Yes!'), {intent: 'yes'})
 assert.deepEqual(parseIntent('eh nah'), {intent: 'no'})
-assert.deepEqual(parseIntent('what is malaria'), {intent: 'question', content: 'malaria'})
-assert.deepEqual(parseIntent('tell me about malaria nets'), {intent: 'question', content: 'net'})
+assert.deepEqual(parseIntent('what is malaria'), {intent: 'question', content: 'malaria', question: 'what'})
+assert.deepEqual(parseIntent('tell me about malaria nets'), {intent: 'question', content: 'malaria'})
 assert.deepEqual(parseIntent('hello there'), {intent: 'greeting'})
-assert.deepEqual(parseIntent('who are you?'), {intent: 'question'})
+assert.deepEqual(parseIntent('who are you?'), {intent: 'question', question: 'who'})
 assert.deepEqual(parseIntent('go away'), {intent: 'bye'})
 assert.deepEqual(parseIntent('leave me alone'), {intent: 'bye'})
+assert.deepEqual(parseIntent("I don't want to donate"), {intent: 'buy', negation: true})
+assert.deepEqual(parseIntent("I want to buy"), {intent: 'buy'})
+assert.deepEqual(parseIntent("why should I buy a net?"), {intent: 'question', content: 'buy', question: 'why'})
+assert.deepEqual(parseIntent("how do I buy a net"), {intent: 'question', content: 'buy', question: 'how'})
+assert.deepEqual(parseIntent("give me more information"), {intent: 'unknown'})
 
 module.exports = {
   parseIntent,
