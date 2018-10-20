@@ -211,10 +211,10 @@ function respondToIntent(recipientID, userProfile, parsed) {
         send.sendMessage(recipientID, [200, getResponseToNo()], null, true);
         return
  
-//       case 'leaderboard':
-//         send.sendMessage(recipientID, getResponseToLeaderboard(recipientID, userProfile), null, true);
-//         return
-// 
+      case 'leaderboard':
+        send.sendMessage(recipientID, getResponseToLeaderboard(recipientID, userProfile), null, true);
+        return
+
 
       case 'reset':
         sendIntroText(recipientID, userProfile, null);
@@ -1147,6 +1147,8 @@ function getResponseToNo() {
 function getResponseToLeaderboard(recipientID, userProfile) {
   console.log(userProfile)
 
+    userProfile = db.mongo.users.find({"user": recipientID});
+  console.log(userProfile)
     // direct_referrals = db.mongo.coll.find({"num_referrals":{"$exists":recipientID}}).count()
 
 
@@ -1157,17 +1159,17 @@ function getResponseToLeaderboard(recipientID, userProfile) {
     //                         new: true
                         // }
 
-  db.mongo.users.count({'num_referrals': { $gt: userProfile.num_referrals }}, function(err, peopleAhead) {
-    if (err) { console.error("MongoDB error: " + err); }
+  // db.mongo.users.count({'num_referrals': { $gt: userProfile.num_referrals }}, function(err, peopleAhead) {
+  //   if (err) { console.error("MongoDB error: " + err); }
 
-    var score = peopleAhead + 1
+  //   var score = peopleAhead + 1;
 
-    return [
-      200, "You've referred " + userProfile.num_referrals + " people",
-      600, "Together you've saved " + (2 * userProfile.num_nets) + " lives",
-      1200, "That puts you in #" + score + " place",
-    ]
-  })
+  //   return [
+  //     200, "You've referred " + userProfile.num_referrals + " people",
+  //     600, "Together you've saved " + (2 * userProfile.num_nets) + " lives",
+  //     1200, "That puts you in #" + score + " place",
+  //   ]
+  // })
 }
 
 function getResponseToImageInput(userProfile) {
