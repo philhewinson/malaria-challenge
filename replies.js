@@ -777,6 +777,7 @@ function arrayContains(needle, arrhaystack) {
     return (arrhaystack.indexOf(needle) > -1);
 }
 
+function isNumber(obj) { return !isNaN(parseFloat(obj)) }
 
 module.exports = {
   processMessage,

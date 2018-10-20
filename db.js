@@ -87,6 +87,7 @@ function purgeLogs() {
     );
 }
 
+function isNumber(obj) { return !isNaN(parseFloat(obj)) }
 
 
 module.exports = {
