@@ -566,7 +566,7 @@ function sendGroupOfMessages(recipientID, userProfile, newNumZaps, payload) {
 
             } else if (payload == "yes2") {
 
-                congratsAfterBuyingNet(recipientID);
+                congratsAfterBuyingNet(recipientID, userProfile);
 
             } else if (payload == "no2") {
 
@@ -612,7 +612,7 @@ function sendGroupOfMessages(recipientID, userProfile, newNumZaps, payload) {
 
             if (payload == "yes") {
 
-                congratsAfterBuyingNet(recipientID);
+                congratsAfterBuyingNet(recipientID, userProfile)
 
             } else if (payload == "no") {
 
@@ -659,7 +659,7 @@ function sendGroupOfMessages(recipientID, userProfile, newNumZaps, payload) {
 
             if (payload == "yes") {
 
-                congratsAfterBuyingNet(recipientID);
+                congratsAfterBuyingNet(recipientID, userProfile)
 
             } else if (payload == "no") {
 
@@ -724,7 +724,7 @@ function sendGroupOfMessages(recipientID, userProfile, newNumZaps, payload) {
 
             if (payload == "yes") {
 
-                congratsAfterBuyingNet(recipientID);
+                congratsAfterBuyingNet(recipientID, userProfile)
 
             } else if (payload == "no") {
 
@@ -793,17 +793,33 @@ function sendGroupOfMessages(recipientID, userProfile, newNumZaps, payload) {
 }
 
 
-function congratsAfterBuyingNet(recipientID) {
-
+function congratsAfterBuyingNet(recipientID, userProfile) {
     send.sendMessage(recipientID,
-
         [
-            2000, "CONGRATULATIONS!!! You've bought a net!  These mosquitoes will stop now and you've also protected two people in Africa from malaria-infected mosquitoes!!!",
+            2000, "CONGRATULATIONS!!!",
+            3000, "You've bought a net!",
+            4000, "These mosquitoes will stop now and you've also protected two people in Africa from malaria-infected mosquitoes!!!",
         ],
-
         null
-
     );
+
+    // Mark this user as having bought a net
+    db.mongo.users.findAndModify({
+        query: { "user": parseInt(inviter) },
+        update: {
+          "bought_net": true
+          $inc: {"num_nets": 1},
+        },
+    },
+    function(err, results) {
+      if (err) { console.error("MongoDB error: " + err); }
+    })
+
+    // If no-one invited us, then there's nothing more to do
+    if (!userProfile.referred_by) {
+      console.log("User wasn't referred by anyone")
+      return
+    }
 
 }
 
