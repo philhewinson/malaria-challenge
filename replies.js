@@ -4,6 +4,7 @@ var request = require('request');
 var db = require('./db')
 var send = require('./send')
 
+var {parseIntent} = require('./grammar')
 
 function sendIntroMessages(recipientID, userProfile) {
     
@@ -136,173 +137,77 @@ function sendIntroText(recipientID, userProfile, inviter) {
         }
     );
 }
+
 function processUnknownInput(recipientID, userProfile) {
-  send.sendMessage(recipientID, [500, getResponseToUnknownInput(userProfile)], null, true);
+  return respondToIntent(recipientID, userProfile, {intent: 'unknown'})
 }
 
 function processMessage(recipientID, userProfile, messageText) {
+  var parsed = parseIntent(messageText)
+  console.log(">", messageText)
+  return respondToIntent(recipientID, userProfile, parsed)
+}
 
-    // Process the messageText in different ways for later analysis if you choose ...
+function respondToIntent(recipientID, userProfile, parsed) {
+    console.log(parsed)
+    switch (parsed.intent) {
+      case 'question':
+        // TODO move this to its own function
+        switch (parsed.content) {
+          case 'malaria':
+            send.sendMessage(recipientID, [200, "?"], null, true);
+            return
 
-    var messageTextLowerCase = messageText.toLowerCase();
-    var messageTextLowerCaseNoWhiteSpaces = messageTextLowerCase.replace(/\s/g,'');
-    var messageTextLowerCaseAlphanumericOnly = messageTextLowerCase.replace(/\W/g, '');
-    var messageTextAlphabetOnly = messageTextLowerCase.replace(/[0-9]/g, '').replace(/\W/g, '');
-    
-    var messageTextLowerCaseWordsArray = messageTextLowerCase.split(" ");
-    var messageTextLowerCaseWordsArrayAlphanumericOnly = [];
-    for (var i=0; i<messageTextLowerCaseWordsArray.length; i++) {
-        var stringToAdd = messageTextLowerCaseWordsArray[i].replace(/\W/g, '');
-        if (stringToAdd.length > 0) {
-            messageTextLowerCaseWordsArrayAlphanumericOnly.push(stringToAdd);
+          case 'score':
+            var score = userProfile.num_referrals|0
+            send.sendMessage(recipientID, [200, "Your score is " + score], null, true);
+            return
+
+          case 'english':
+            send.sendMessage(recipientID, [1000, "Sorry, English is the only language I speak"], null, true);
+            return
+
+          default:
+            send.sendMessage(recipientID, [2000, getResponseToQuestionInput(userProfile)], null, true);
+            return
         }
-    }
 
-    var messageTextLowerCaseWordsNonNumbersArray = messageTextLowerCase.replace(/[0-9]/g, '').split(" ");
-    var messageTextLowerCaseWordsArrayAlphabetOnly = [];
-    for (var i=0; i<messageTextLowerCaseWordsNonNumbersArray.length; i++) {
-        var stringToAdd = messageTextLowerCaseWordsNonNumbersArray[i].replace(/\W/g, '');
-        if (stringToAdd.length > 0) {
-            messageTextLowerCaseWordsArrayAlphabetOnly.push(stringToAdd);
-        }
-    }
-    
-    var emojisFromMessageText = getEmojisFromString(messageText);
-
-
-    // Handle different inputs, dealing with the more specific inputs first ...
-    
-    if (messageTextLowerCaseNoWhiteSpaces == "?" ) {
-
-        send.sendMessage(recipientID, [200, "?"], null, true);
+      case 'yes':
+        send.sendMessage(recipientID, [200, getResponseToYes()], null, true);
+        return
         
-    } else if (messageTextLowerCaseNoWhiteSpaces == "ok" || messageTextLowerCaseNoWhiteSpaces == "okay" ||
-            messageTextLowerCaseNoWhiteSpaces == "k" || messageTextLowerCaseNoWhiteSpaces == "yes" ||
-            messageTextLowerCaseNoWhiteSpaces == "cool" || messageTextLowerCaseNoWhiteSpaces == "yay" ||
-            messageTextLowerCaseNoWhiteSpaces == "oh" || messageTextLowerCaseNoWhiteSpaces == "done" ||
-            messageTextLowerCaseNoWhiteSpaces == "nice" || messageTextLowerCaseNoWhiteSpaces == "fine" ||
-            messageTextLowerCaseNoWhiteSpaces == "yeah" || messageTextLowerCaseNoWhiteSpaces == "boom" ||
-            messageTextLowerCaseNoWhiteSpaces == "yea" || messageTextLowerCaseNoWhiteSpaces == "yep" ||
-            messageTextLowerCaseNoWhiteSpaces == "yey" || messageTextLowerCaseNoWhiteSpaces == "ya" ||
-            messageTextLowerCaseNoWhiteSpaces == "cheers" || messageTextLowerCaseNoWhiteSpaces == "youtoo" ||
-            messageTextLowerCaseNoWhiteSpaces == "tg" || messageTextLowerCaseNoWhiteSpaces == "tf"  ||
-            messageTextLowerCaseNoWhiteSpaces == "ofcourse" || messageTextLowerCaseNoWhiteSpaces == "occasionally"  ||
-            messageTextLowerCaseNoWhiteSpaces == "great" || messageTextLowerCaseNoWhiteSpaces == "np") {
-
-        send.sendMessage(recipientID, [200, "👍"], null, true);
-        
-    } else if (messageTextLowerCaseNoWhiteSpaces == "no" || messageTextLowerCaseNoWhiteSpaces == "nope" ) {
-
+      case 'no':
         send.sendMessage(recipientID, [200, getResponseToNo()], null, true);
+        return
         
-    } else if (messageTextLowerCaseNoWhiteSpaces == "yo" ) {
-
-        send.sendMessage(recipientID, [200, "Yo!"], null, true);
-        
-    } else if ( messageTextLowerCaseNoWhiteSpaces.includes("getstarted") ||
-                messageTextLowerCaseNoWhiteSpaces.includes("startover") ||
-                messageTextLowerCase.includes("restart") ||
-                messageTextLowerCaseNoWhiteSpaces.includes("startagain") ||
-                messageTextLowerCase.includes("wipe") ||
-                messageTextLowerCase.includes("reset") ) {
-
+      case 'reset':
         sendIntroText(recipientID, userProfile, null);
+        return
 
-    } else if ( messageTextLowerCase.includes("invite") || messageTextLowerCase.includes("share") ||
-                arrayContains("refer", messageTextLowerCaseWordsArrayAlphanumericOnly) ) {
-
+      case 'share':
         send.share(recipientID);
+        return
 
-    } else if (messageTextLowerCase.includes("score") || messageTextLowerCase.includes("rank") || messageTextLowerCase.includes("position") || messageTextLowerCase.includes("leaderboard")) {
-
-        // TO IMPLEMENT ...
-        // viewScore(recipientID, false, true, null);
-        send.sendMessage(recipientID, [500, getResponseToUnknownInput(userProfile)], null, true);
-
-    } else if (messageTextLowerCase.includes("help")) {
-
-        send.sendMessage(recipientID, [2000,
-                            "What's wrong?"],
-                    null, true);
-
-    } else if ( (arrayContains("hi", messageTextLowerCaseWordsArrayAlphanumericOnly)) ||
-                messageTextLowerCase.includes("hello") ||
-                messageTextLowerCase.includes("hiya") ||
-                messageTextLowerCase.includes("hola") ||
-                (arrayContains("hey", messageTextLowerCaseWordsArrayAlphanumericOnly)) ) {
-
-        // Answer to "Hi"
+      case 'greeting':
         send.sendMessage(recipientID, [1000, "Hi " + userProfile.first_name + ", how are you today?"], null, true);
+        return
 
-    }  else if ( messageTextLowerCase.includes("english") ) {
-
-        send.sendMessage(recipientID, [1000, "Sorry, English is the only language I speak"], null, true);
-
-    } else if ( messageTextLowerCase.includes("bye") ||
-                messageTextLowerCase.includes("gtg") ||
-                messageTextLowerCase.includes("later") ||
-                messageTextLowerCase.includes("adios") ||
-                messageTextLowerCase.includes("see you") ||
-                arrayContains("cya", messageTextLowerCaseWordsArrayAlphanumericOnly) ) {
-
-        send.sendMessage(recipientID, [1000, "Bye " + userProfile.first_name + "!"], null, true);
-
-    } else if (messageTextLowerCase.includes("?")) {
-
-        send.sendMessage(recipientID, [2000, getResponseToQuestionInput(messageText, userProfile)], null, true);
-
-    } else if ( messageTextLowerCase.includes("sorry") ||
-                messageTextLowerCase.includes("soz") ) {
-
-            send.sendMessage(recipientID, [1000, "No problem!"], null, true);
-
-    } else if ( arrayContains("yes", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
-                arrayContains("yeah", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
-                arrayContains("yea", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
-                arrayContains("yep", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
-                arrayContains("cheers", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
-                arrayContains("sure", messageTextLowerCaseWordsArrayAlphanumericOnly) ) {
-
-        send.sendMessage(recipientID, [200, getResponseToYes()], null, true);
-        
-    } else if ( arrayContains("no", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
-                arrayContains("nope", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
-                arrayContains("nop", messageTextLowerCaseWordsArrayAlphanumericOnly) ) {
-
-        send.sendMessage(recipientID, [200, getResponseToNo()], null, true);
-        
-    } else if (arrayContains("yo", messageTextLowerCaseWordsArrayAlphanumericOnly)) {
-
-        send.sendMessage(recipientID, [200, "Yo!"], null, true);
-        
-    } else if ( arrayContains("ok", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
-                arrayContains("okay", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
-                arrayContains("k", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
-                arrayContains("oh", messageTextLowerCaseWordsArrayAlphanumericOnly) ||
-                arrayContains("o", messageTextLowerCaseWordsArrayAlphanumericOnly) ) {
-
-        send.sendMessage(recipientID, [200, getResponseToYes()], null, true);
-        
-    } else if ( messageTextLowerCase.includes("thank") || 
-                messageTextLowerCase.includes("thx") || 
-                messageTextLowerCase.includes("thku") || 
-                messageTextLowerCase.includes("thk u") || 
-                messageTextLowerCase.includes("thk you") || 
-                messageTextLowerCase.includes("thks") ) {
-
+      case 'gratitude':
         send.sendMessage(recipientID, [1000, "You're very welcome " + userProfile.first_name + "!"], null, true);
+        return
 
-    } else if (emojisFromMessageText.length == messageText.length) {
-        
-        // Only sent emojis, so send the same one back
-        send.sendMessage(recipientID, [500, messageText], null, true);
-        
-    } else {
+      case 'bye':
+        send.sendMessage(recipientID, [1000, "Bye " + userProfile.first_name + "!"], null, true);
+        return
 
+      case 'help':
+        send.sendMessage(recipientID, [2000, "What's wrong?"], null, true);
+        return
+
+      case 'unknown':
+      default:
         send.sendMessage(recipientID, [500, getResponseToUnknownInput(userProfile)], null, true);
-
     }
-
 }
 
 function processAttachment(recipientID, userProfile, attachment, attachmentURL, stickerID) {
@@ -317,8 +222,8 @@ function processAttachment(recipientID, userProfile, attachment, attachmentURL, 
         if (stickerID == "369239263222822" || stickerID == "369239343222814" ||
             stickerID == "369239383222810") {
 
-            // Facebook thumbs up, so send a thumbs up back
-            send.sendMessage(recipientID, [200, "👍"], null, false);
+            // Facebook thumbs up
+            respondToIntent(recipientID, userProfile, {intent: 'yes'})
 
         } else {
             
@@ -344,10 +249,6 @@ function processAttachment(recipientID, userProfile, attachment, attachmentURL, 
 
     }
 }
-
-
-/* Send functions */
-
 
 
 /*******/
@@ -523,7 +424,7 @@ function getResponseToUnknownInput(userProfile) {
     
 }
 
-function getResponseToQuestionInput(messageText, userProfile) {
+function getResponseToQuestionInput(userProfile) {
     
     // Get a random number between 1 and 5 inclusive
     var randomNumber = Math.floor(Math.random() * 5) + 1;
@@ -536,7 +437,7 @@ function getResponseToQuestionInput(messageText, userProfile) {
             text = "What an interesting question ... to be honest with you, I'm not sure.";
             break;
         case 2:
-            text = messageText;
+            text = "I'm not sure";
             break;
         case 3:
             text = "Do I really have to answer that!?";
