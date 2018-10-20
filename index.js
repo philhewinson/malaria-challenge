@@ -225,13 +225,19 @@ app.post('/webhook', function (req, res) {
                         //console.log("Read received");
                         
                     } else if (event.referral) {
+
+                      var senderID = event.sender.id;
+
+                      var inviter = +ref.replace("invite_", "");
                         
                         // Log ref param
                         var ref_for_logging = event.referral;
                         if (event.referral != null) {
                             ref_for_logging = ref_for_logging + " (" + JSON.stringify(event.referral) + ")";
                         }
-                        console.log("Ref parameter for user " + event.sender.id + " = " + ref_for_logging + " [through Referral (existing user)]");
+                        console.log("Ref parameter for user " + senderID + " = " + ref_for_logging + " [through Referral (existing user)]");
+
+                        replies.sendIntroText(senderID, null, inviter);
                         
                     } else {
                         console.log("Webhook received unknown event: ", event);
@@ -631,7 +637,6 @@ function receivedPostback(event, userProfile) {
             
             // Check if this user came from another user
             var valid_inviter = null;
-            ref = ref_for_logging;
             if (ref != null && ref.includes("invite_")) {
                 
                 // This is an invitation from another user, so get the id of the inviter
