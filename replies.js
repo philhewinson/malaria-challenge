@@ -1157,11 +1157,17 @@ function getResponseToLeaderboard(recipientID, userProfile) {
     //                         new: true
                         // }
 
+  db.users.count({'num_referrals': { $gt: userProfile.num_referrals }}, function(err, peopleAhead) {
+    if (err) { console.error("MongoDB error: " + err); }
+
+    var score = peopleAhead + 1
+
     return [
       200, "You've referred " + userProfile.num_referrals + " people",
       600, "Together you've saved " + (2 * userProfile.num_nets) + " lives",
-      1200, "That puts you in #XXX place",
+      1200, "That puts you in #" + score + " place",
     ]
+  })
 }
 
 function getResponseToImageInput(userProfile) {
