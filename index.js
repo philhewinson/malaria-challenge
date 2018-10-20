@@ -85,27 +85,27 @@ app.get('/version', function(request, response) {
 /* End points used */
 
 app.get('/webhook', function(req, res) {
-    
-    if (req.query['hub.mode'] === 'subscribe' &&
-        req.query['hub.verify_token'] === PAGE_VERIFY_TOKEN) {
-      console.log("Validating webhook");
-      res.status(200).send(req.query['hub.challenge']);
-    } else {
-      console.error("Failed validation. Make sure the validation tokens match.");
-      res.sendStatus(403);          
-    }  
-  });
 
-  app.get('/purge_logs', function(req, res) {
-    
-    if (SLEEP_MODE == false) {
-        db.purgeLogs();
-        //res.sendStatus(200);
-        res.status(200).end();
-    } else {
-        res.send("In Sleep Mode!");
-    }
-    
+  if (req.query['hub.mode'] === 'subscribe' &&
+    req.query['hub.verify_token'] === PAGE_VERIFY_TOKEN) {
+    console.log("Validating webhook");
+    res.status(200).send(req.query['hub.challenge']);
+  } else {
+    console.error("Failed validation. Make sure the validation tokens match.");
+    res.sendStatus(403);          
+  }  
+});
+
+app.get('/purge_logs', function(req, res) {
+
+  if (SLEEP_MODE == false) {
+    db.purgeLogs();
+    //res.sendStatus(200);
+    res.status(200).end();
+  } else {
+    res.send("In Sleep Mode!");
+  }
+
 });
 
 
