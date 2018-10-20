@@ -218,12 +218,17 @@ function respondToIntent(recipientID, userProfile, parsed) {
         return
 
       case 'persuade':
-         send.sendMessage(recipientID, [200, getResponseToPersuade()], null, true); 
-      return
+        send.sendMessage(recipientID, [200, getResponseToPersuade()], null, true); 
+        return
 
       case 'buy':
-         send.sendMessage(recipientID, [200, "Click here to donate!"], null, true);
-      return
+        send.sendMessage(recipientID, randomChoice([
+          [0, "Amazing!", 200,  "Your net will protect someone from Malaria for at least 4 years."],
+          [0, "Thank you so much.", 300, "This maybe the most impactful £1.50 you’ve ever spent"],
+          [0, userProfile.first_name, 500, "This will change someone's life, thank you"],
+        ]), null, true);
+        // TODO A ‘first name’, it looks like you’ve already bought one. Share this with a friend so that they can buy a net. 
+        return
 
       case 'paid':
          send.sendMessage(recipientID, [200, "Finally, a bit of restbite from these pesky Mozzies AND you're now protecting 2 lives. Thank you so much!"], null, true);
