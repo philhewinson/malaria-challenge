@@ -316,7 +316,7 @@ function processAttachment(recipientID, userProfile, attachment, attachmentURL, 
 }
 
 function zap(recipientID, userProfile, payloadTimestamp) {
-console.log("1");
+
     // Get the current time as close as possible to when the zap happened
     var currentTimestamp = new Date().getTime();
 
@@ -373,7 +373,7 @@ console.log("1");
                 });
 
             } else {
-                console.log("2");
+
                 // Found the unzapped mozzy and marked it as zapped ...
 
                 // Increment num_zaps for this user in the user's table and later the other zap metrics (assuming they exist already,
@@ -405,7 +405,7 @@ console.log("1");
 }
 
 function sendZapResponse(recipientID, userProfile, payloadTimestamp, currentTimestamp, newNumZaps) {
-    console.log("3");
+
     // Get the zapTime of the most recent mozzy
 
     var zapTimeRecentMozzy = currentTimestamp - parseInt(payloadTimestamp);
@@ -456,7 +456,7 @@ function sendZapResponse(recipientID, userProfile, payloadTimestamp, currentTime
     } else {
         initialText = "OH NO - it took you over 10 seconds to zap that mozzy and it stung you.  You now have malaria and you'll soon be dead 😢";
     }
-    console.log("4");
+
     sendTimeAndPointsText(initialText, zapTimeRecentMozzyInSeconds, recipientID, userProfile, newNumZaps);
 
 }
@@ -467,7 +467,7 @@ function sendTimeAndPointsText(initialText, zapTimeRecentMozzyInSeconds, recipie
     if (zapTimeRecentMozzyInSeconds >=1) {
         punctuation = ".";
     }
-    console.log("5");
+
     send.sendMessage(recipientID,
 
         [
