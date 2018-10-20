@@ -180,7 +180,7 @@ function respondToQuestion(recipientID, userProfile, question, subject) {
         [0, "🥅"],
         [0, "💉"],
         [0, "💊"],
-      ], null, true)
+      ]), null, true)
       return
 
     default:
