@@ -37,7 +37,7 @@ function sendIntroText(recipientID, userProfile, inviter) {
                                 "status": "active", "time_joined": currentTimestamp,
                                 "num_messages": 0, "num_message_attachments": 0,
                                 "num_referrals" : 0, "num_recursive_referrals" : 0,
-                                "num_zaps": 0, "inviter": inviter } },
+                                "num_zaps": 0, "num_nets": 0, "inviter": inviter } },
         // new: true,   // return new doc if one is upserted
         upsert: true // insert the document if it does not exist
 
@@ -805,9 +805,9 @@ function congratsAfterBuyingNet(recipientID, userProfile) {
 
     // Mark this user as having bought a net
     db.mongo.users.findAndModify({
-        query: { "user": parseInt(inviter) },
+        query: { "user": parseInt(recipientID) },
         update: {
-          "bought_net": true
+          "bought_net": true,
           $inc: {"num_nets": 1},
         },
     },
@@ -820,7 +820,31 @@ function congratsAfterBuyingNet(recipientID, userProfile) {
       console.log("User wasn't referred by anyone")
       return
     }
+    var inviter = userProfile.referred_by
 
+    // Update their inviter's score
+    db.mongo.users.findAndModify({
+        query: { "user": parseInt(inviter) },
+        update: {
+          $inc: {"num_nets": 1},
+        },
+        new: true,
+    },
+    function(err, results) {
+      if (err) { console.error("MongoDB error: " + err); }
+
+      var inviterProfile = results[0]
+
+      // Tell their inviter they bought a net
+      send.sendMessage(inviter,
+          [
+            0, userProfile.first_name + " bought a net!",
+            1000, "You've saved " + (2 * inviterProfile.num_nets) + " lives"
+          ],
+          null
+      );
+
+    })
 }
 
 
