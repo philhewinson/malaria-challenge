@@ -461,8 +461,6 @@ function sendTimeAndPointsText(initialText, zapTimeRecentMozzyInSeconds, recipie
         [
             200, initialText,
             500, "You zapped that mozzy in " + getReadableTime(zapTimeRecentMozzyInSeconds, false),
-            1000, "My name is midge the mozz and I've set my friends on you.",
-            1700, "Why don't you buy a mozzie net?",
         ],
 
         function() {
