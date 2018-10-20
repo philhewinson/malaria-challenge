@@ -7,7 +7,7 @@ var send = require('./send')
 
 function sendIntroMessages(recipientID, userProfile) {
     
-    sendMessage(recipientID,
+    send.sendMessage(recipientID,
 
         [
             0, "Hello " + userProfile.first_name + "!",
@@ -74,7 +74,7 @@ function sendIntroText(recipientID, userProfile, inviter) {
                             if (err) { console.error("MongoDB error: " + err); }
                             //console.log("MongoDB results: " + JSON.stringify(results));
 
-                            sendMessage(inviter,
+                            send.sendMessage(inviter,
 
                                 [
                                     200, "Your friend " + userProfile.first_name + " " + userProfile.last_name + " just started the Malaria Challenge - we'll let you know if they buy a malaria net!"
