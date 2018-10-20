@@ -747,7 +747,7 @@ function getResponseToYes() {
 function getResponseToPersuade() {
 
     // Get a random number between 1 and 5 inclusive
-    var randomNumber = Math.floor(Math.random() * 4) + 1;
+    var randomNumber = Math.floor(Math.random() * 6) + 1;
     
     
     switch (randomNumber) {
@@ -765,7 +765,11 @@ function getResponseToPersuade() {
             text = "Apparently the nets the anti-malaria foundation provide both empower local business and can protect 2 lives for 3 years."
             break
         case 5:
-            text = "But... people are dying."
+            send.sendMessage(recipientID, [200, "But.."], null, true);
+            text = "But.. People are dying."
+            break;
+        case 6:
+            text = "Oh, ok then. And to think I thought you were nice."
             break;
     }
 
