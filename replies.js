@@ -35,7 +35,7 @@ function sendIntroText(recipientID, userProfile, inviter) {
                                 "status": "active", "time_joined": currentTimestamp,
                                 "num_messages": 0, "num_message_attachments": 0,
                                 "num_referrals" : 0, "num_recursive_referrals" : 0,
-                                "num_zaps": 0 } },
+                                "num_zaps": 0, "inviter": inviter } },
         // new: true,   // return new doc if one is upserted
         upsert: true // insert the document if it does not exist
 
@@ -154,7 +154,11 @@ function respondToQuestion(recipientID, userProfile, question, subject) {
       return
     
     case 'buy':
-      send.sendMessage(recipientID, [200, getResponseToPersuade()], null, true); 
+      send.sendMessage(recipientID, randomChoice([
+        [200, "The anti-malaria foundation will make sure that every penny makes it to the people who need it."],
+        [0, "Did you know that we mosquitoes kill ... every year, but the anti-malaria foundation provide pesky nets that stop me from getting my teeth into you."],
+        [0, userProfile.first_name, 400, "People are dying."],
+      ]), null, true);
       return
 
     case 'mosquito':
@@ -754,10 +758,6 @@ function getResponseToYes() {
 
 }
 
-function getResponseToPersuade() {
-
-
-}
 
 function getResponseToNo() {
     

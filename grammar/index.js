@@ -42,7 +42,7 @@ const lexer = moo.compile({
 
       negation: ['never', 'no', 'not', "don't", "won't", "shan't", "can't"],
 
-      persuade: ['might','maybe','unsure','consider'],      
+      persuade: ['might','maybe','unsure','consider', 'convinced'],      
       paid: ['paid', 'complete'],
         
 
