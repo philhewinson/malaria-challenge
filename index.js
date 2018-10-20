@@ -39,13 +39,6 @@ if (process.env.PAGE_VERIFY_TOKEN) {
   PAGE_VERIFY_TOKEN = process.env.PAGE_VERIFY_TOKEN; // Production Page (set when running from Heroku)
 }
 
-// BOT_PAGE_ALIAS
-
-var BOT_PAGE_ALIAS = "";  // Test Page (set when running locally)
-
-if (process.env.BOT_PAGE_ALIAS) {
-  BOT_PAGE_ALIAS = process.env.BOT_PAGE_ALIAS; // Production Page (set when running from Heroku)
-}
 
 // MY USER ID (FOR LOCAL TIMESTAMPS IN THE STATS AND LOGGING PAGES)
 

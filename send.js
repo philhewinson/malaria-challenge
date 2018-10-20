@@ -5,6 +5,7 @@ var db = require('./db')
 
 var SLEEP_MODE = process.env.SLEEP_MODE == "true"
 var PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN; 
+var BOT_PAGE_ALIAS = process.env.BOT_PAGE_ALIAS;
 
 function callSendAPI(messageData, recipientID) {
     

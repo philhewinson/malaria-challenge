@@ -211,7 +211,7 @@ function processMessage(recipientID, userProfile, messageText) {
     } else if ( messageTextLowerCase.includes("invite") || messageTextLowerCase.includes("share") ||
                 arrayContains("refer", messageTextLowerCaseWordsArrayAlphanumericOnly) ) {
 
-        share(recipientID);
+        send.share(recipientID);
 
     } else if (messageTextLowerCase.includes("score") || messageTextLowerCase.includes("rank") || messageTextLowerCase.includes("position") || messageTextLowerCase.includes("leaderboard")) {
 
