@@ -37,7 +37,8 @@ function sendIntroText(recipientID, userProfile, inviter) {
                                 "status": "active", "time_joined": currentTimestamp,
                                 "num_messages": 0, "num_message_attachments": 0,
                                 "num_referrals" : 0, "num_recursive_referrals" : 0,
-                                "num_zaps": 0, "num_nets": 0, "inviter": inviter } },
+                                "num_zaps": 0, "num_nets": 0, "inviter": inviter },
+                  $set: { "num_zaps": 0 } },
         // new: true,   // return new doc if one is upserted
         upsert: true // insert the document if it does not exist
 
