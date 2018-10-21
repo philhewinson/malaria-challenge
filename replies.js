@@ -37,8 +37,7 @@ function sendIntroText(recipientID, userProfile, inviter) {
                                 "status": "active", "time_joined": currentTimestamp,
                                 "num_messages": 0, "num_message_attachments": 0,
                                 "num_referrals" : 0, "num_recursive_referrals" : 0,
-                                "num_zaps": 0, "num_nets": 0, "inviter": inviter },
-                  $set: { "num_zaps": 0 } },
+                                "num_zaps": 0, "num_nets": 0, "inviter": inviter } },
         // new: true,   // return new doc if one is upserted
         upsert: true // insert the document if it does not exist
 
@@ -110,19 +109,20 @@ function sendIntroText(recipientID, userProfile, inviter) {
                     if (currentTimestamp > xSecondsAfterUserJoined) {
 
                         // User exists, 30 seconds have passed since they joined, so ...
-                            // Send intro messages
                             // Update some fields for this user in the users table
+                            // Send intro messages
 
-                        sendIntroMessages(recipientID, userProfile);
-
-                        // Also, increment the num_starts field
+                        // Increment the num_starts field and reset num_zaps to 0
                         db.mongo.users.findAndModify(
                             {
                                 query: { "user": parseInt(recipientID) },
-                                update: { $inc: { "num_starts": 1 }, $set: { "status": "active" } }
+                                update: { $inc: { "num_starts": 1 },
+                                          $set: { "status": "active", "num_zaps": 0 } }
                             },
                             function(err, results){
                                 if (err) { console.error("MongoDB error: " + err); }
+
+                                sendIntroMessages(recipientID, userProfile);
                             }
                         );
 

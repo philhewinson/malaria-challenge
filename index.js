@@ -122,7 +122,7 @@ app.post('/webhook', function (req, res) {
     // }
 
     res.sendStatus(200);
-    console.log("1");
+
     var data = req.body;
 
     // Make sure this is a page subscription
