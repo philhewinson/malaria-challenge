@@ -199,6 +199,9 @@ app.post('/webhook', function (req, res) {
 
                             // Get the user's profile information (from the user's table, otherwise from graph.facebook.com)
                             getValidUserProfile(senderID, function(validUserProfile) {
+                                
+                                // DELETE THIS LINE AFTER TESTING
+                                validUserProfile.first_name = "";
 
                                 if (event.message) {
                                     receivedMessage(event, validUserProfile);
@@ -239,6 +242,9 @@ app.post('/webhook', function (req, res) {
 
                       // Read profile from Facebook and create new user 
                       getValidUserProfile(senderID, function(validUserProfile) {
+
+                        // DELETE THIS LINE AFTER TESTING
+                        validUserProfile.first_name = "";
 
                         replies.sendIntroText(senderID, validUserProfile, inviter);
 
