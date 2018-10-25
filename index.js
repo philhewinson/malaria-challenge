@@ -199,7 +199,7 @@ app.post('/webhook', function (req, res) {
 
                             // Get the user's profile information (from the user's table, otherwise from graph.facebook.com)
                             getValidUserProfile(senderID, function(validUserProfile) {
-                                
+
                                 // DELETE THIS LINE AFTER TESTING
                                 validUserProfile.first_name = "";
 
@@ -319,7 +319,7 @@ function getValidUserProfile(recipientID, callback) {
 
         if (needToGetUserProfileFromFacebook == true) {
 
-            var profileInfoRequest = "https://graph.facebook.com/v2.6/" + recipientID +
+            var profileInfoRequest = "https://graph.facebook.com/v3.0/" + recipientID +
                 "?fields=first_name,last_name,profile_pic,locale,timezone,gender&access_token=" + PAGE_ACCESS_TOKEN;
             request(profileInfoRequest, function(error, response, body) {
 
@@ -422,7 +422,7 @@ function getValidUserProfile(recipientID, callback) {
                 
                 // Catch error
 
-                var errorMessage = 'Error on https://graph.facebook.com/v2.6/: ' + e.message;
+                var errorMessage = 'Error on https://graph.facebook.com/v3.0/: ' + e.message;
                 console.error(errorMessage);
                 logErrorInMongo(errorMessage, senderID);
 
@@ -436,6 +436,7 @@ function getValidUserProfile(recipientID, callback) {
 /* Receive functions */
   
 function receivedMessage(event, userProfile) {
+
     console.log(JSON.stringify(event));
     var senderID = event.sender.id;
     var recipientID = event.recipient.id;
@@ -457,6 +458,11 @@ function receivedMessage(event, userProfile) {
         messageAttachments[0].payload != null) {
         attachmentURL = messageAttachments[0].payload.url;
     }
+
+    var messageTextLowerCase = messageText.toLowerCase();
+    var messageTextLowerCaseNoWhiteSpaces = messageTextLowerCase.replace(/\s/g,'');
+    var messageTextLowerCaseAlphanumericOnly = messageTextLowerCase.replace(/\W/g, '');
+    var messageTextAlphabetOnly = messageTextLowerCase.replace(/[0-9]/g, '').replace(/\W/g, '');
 
     if (!messageEcho) {
 
@@ -485,30 +491,31 @@ function receivedMessage(event, userProfile) {
 
                 var quickReply = message.quick_reply;
 
-                if (quickReply != null) {
+                if (quickReply != null ||
+                    replies.arrayContains(messageTextLowerCaseAlphanumericOnly, replies.quickReplyMessages)) {
 
-                    var quickReplyPayload = quickReply.payload;
-                    
-                    if (quickReplyPayload != null) {
-
-                        // Then we process the message as a quick reply
-                        processMessageText = false;
-
-                        db.mongo.users.find({ "user": parseInt(senderID) }, function(err, mongoUserResults){
-
-                            if (err) { console.error("MongoDB error: " + err); }
-            
-                            if (mongoUserResults != null) {
-            
-                                var numZaps = mongoUserResults[0].num_zaps;
-            
-                                replies.sendGroupOfMessages(senderID, userProfile, numZaps, quickReplyPayload);
-            
-                            }
-            
-                        });
-
+                    var quickReplyPayload = null;
+                    if (quickReply != null) {
+                        quickReplyPayload = quickReply.payload;
                     }
+                    
+                    // Then we process the message as a quick reply
+                    processMessageText = false;
+
+                    db.mongo.users.find({ "user": parseInt(senderID) }, function(err, mongoUserResults){
+
+                        if (err) { console.error("MongoDB error: " + err); }
+        
+                        if (mongoUserResults != null) {
+        
+                            var numZaps = mongoUserResults[0].num_zaps;
+        
+                            replies.sendGroupOfMessages(senderID, userProfile, numZaps, quickReplyPayload, messageTextLowerCaseAlphanumericOnly);
+        
+                        }
+        
+                    });
+
                 }
 
                 if (messageText && processMessageText == true) {

@@ -9,7 +9,7 @@ var BOT_PAGE_ALIAS = process.env.BOT_PAGE_ALIAS;
 
 function callSendAPI(messageData, recipientID) {
     
-    var URI = 'https://graph.facebook.com/v2.6/me/messages';
+    var URI = 'https://graph.facebook.com/v3.0/me/messages';
     
     request({
         
@@ -99,7 +99,7 @@ function callSendAPI(messageData, recipientID) {
                 } else {
 
                     if (body != null) {
-                        db.logError("Error in return Body from https://graph.facebook.com/v2.6/me/messages: " + JSON.stringify(body), recipientID);
+                        db.logError("Error in return Body from https://graph.facebook.com/v3.0/me/messages: " + JSON.stringify(body), recipientID);
                     }
 
                 }
@@ -122,7 +122,7 @@ function callSendAPI(messageData, recipientID) {
     
         // Catch error
 
-        var errorMessage = 'Error on https://graph.facebook.com/v2.6/me/messages: ' + e.message;
+        var errorMessage = 'Error on https://graph.facebook.com/v3.0/me/messages: ' + e.message;
         console.error(errorMessage);
         db.logError(errorMessage, recipientID);
 
@@ -302,6 +302,84 @@ function sendVideo(recipientID, videoURL, callback) {
 
 }
 
+function sendPayButton(recipientID, text, paymentURL, buttonTitle, callback) {
+
+    var data = {
+        recipient: {
+            id: recipientID
+        },
+        message: {
+            attachment: {
+                type: "template",
+                payload: {
+                    template_type: "button",
+                    text: text,
+                    buttons: [
+                        {
+                            "type": "web_url",
+                            "url": paymentURL,
+                            "title": buttonTitle,
+                            "webview_height_ratio": "tall",
+                            "webview_share_button": "hide"
+                        }
+                    ]
+                }
+            }
+        }
+    };
+
+    callSendAPI(data, recipientID);
+
+    if (callback != null) {
+        callback();
+    }
+
+}
+
+function sendGenericTemplate(recipientID, title, imageURL, subTitle, url, buttonText, callback) {
+
+    var data = {
+        recipient: {
+            id: recipientID
+        },
+        message: {
+            attachment: {
+                type: "template",
+                payload: {
+                    template_type: "generic",
+                    image_aspect_ratio: "square",
+                    elements: [
+                        {
+                            "title": title,
+                            "image_url": imageURL,
+                            "subtitle": subTitle,
+                            "default_action": {
+                                "type": "web_url",
+                                "url": url,
+                                "webview_height_ratio": "full"
+                            },
+                            "buttons":[
+                                {
+                                    "type": "web_url",
+                                    "url": url,
+                                    "title": buttonText
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    };
+
+    callSendAPI(data, recipientID);
+
+    if (callback != null) {
+        callback();
+    }
+
+}
+
 function sendQuickReplies(recipientID, message, title1, payload1, title2, payload2) {
 
     var data = {
@@ -330,17 +408,17 @@ function sendQuickReplies(recipientID, message, title1, payload1, title2, payloa
 }
 
 
-function sendMozzy(recipientID, userProfile) {
+function sendMozzie(recipientID, userProfile) {
 
-    console.log("sendMozzy (" + recipientID + "); called");
+    console.log("sendMozzie (" + recipientID + "); called");
 
     // Set the title to use
     var titleToUse = "Zap!";
 
     // Image URL
-    var mozzyImageURL = "http://www.projectedgames.com/amf/mozzy.png";
+    var mozzieImageURL = "http://www.projectedgames.com/amf/mozzie.png";
 
-    // Add to mozzy database ...
+    // Add to mozzie database ...
 
     var currentTimestamp = new Date().getTime();
 
@@ -349,9 +427,9 @@ function sendMozzy(recipientID, userProfile) {
             "recipient": parseInt(recipientID),
             "time_sent": parseInt(currentTimestamp)
         };
-    //console.log("Query JSON (mozzys.insert): " + queryJSON);
+    //console.log("Query JSON (mozzies.insert): " + queryJSON);
 
-    db.mongo.mozzys.insert(
+    db.mongo.mozzies.insert(
         queryJSON,
         function(err, results){
 
@@ -359,11 +437,11 @@ function sendMozzy(recipientID, userProfile) {
             
             if (err) {
                 console.error("MongoDB error: " + err);
-                console.error("Couldn't send mozzy to user due to DB insertion error: recipientID = " + recipientID);
-                db.logError("Couldn't send mozzy to user due to DB insertion error: recipientID = " + recipientID, recipientID, true);
+                console.error("Couldn't send mozzie to user due to DB insertion error: recipientID = " + recipientID);
+                db.logError("Couldn't send mozzie to user due to DB insertion error: recipientID = " + recipientID, recipientID, true);
             } else {
                 
-            // Send the mozzy to the user
+            // Send the mozzie to the user
 
                 var data = {
                     recipient: {
@@ -377,7 +455,7 @@ function sendMozzy(recipientID, userProfile) {
                                 image_aspect_ratio: "square",
                                 elements: [{     
                                     title: titleToUse,
-                                    image_url: mozzyImageURL,
+                                    image_url: mozzieImageURL,
                                     buttons: [{
                                         type: "postback",
                                         title: "Zap!",
@@ -518,7 +596,9 @@ module.exports = {
   sendImage,
   sendAudio,
   sendVideo,
+  sendPayButton,
   share,
-  sendMozzy,
+  sendMozzie,
+  sendGenericTemplate,
   sendQuickReplies
 }

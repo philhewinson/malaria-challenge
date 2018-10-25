@@ -6,15 +6,19 @@ var send = require('./send')
 
 var {parseIntent} = require('./grammar')
 
+
+var quickReplyMessages = ['tellmemore', 'notnow', 'yes', 'notyet'];
+
+
 function sendIntroMessages(recipientID, userProfile) {
     
-    sendGroupOfMessages(recipientID, userProfile, 0, null);
+    sendGroupOfMessages(recipientID, userProfile, 0, null, "");
     
 }
 
 
 function sendIntroText(recipientID, userProfile, inviter) {
-    
+    console.log("sendIntroText");
     // Get current time for the time_joined field for a new user
     var currentTimestamp = new Date().getTime();
 
@@ -30,7 +34,8 @@ function sendIntroText(recipientID, userProfile, inviter) {
     db.mongo.users.findAndModify({
 
         query: { "user": parseInt(recipientID) },
-        update: { $setOnInsert: { "user": parseInt(recipientID), "bought_net": false, "referred_by": inviterForQuery, 
+        update: { $setOnInsert: { "user": parseInt(recipientID), "bought_net": false, 
+                                "told_more": false, "referred_by": inviterForQuery, 
                                 "first_name": userProfile.first_name, "last_name": userProfile.last_name,
                                 "profile_pic": userProfile.profile_pic, "locale": userProfile.locale, "timezone": parseInt(userProfile.timezone),
                                 "gender": userProfile.gender, "num_starts": 1,
@@ -218,6 +223,7 @@ function respondToIntent(recipientID, userProfile, parsed) {
 
 
       case 'reset':
+      console.log("reset");
         sendIntroText(recipientID, userProfile, null);
         return
 
@@ -226,7 +232,7 @@ function respondToIntent(recipientID, userProfile, parsed) {
         return
 
       case 'greeting':
-        send.sendMessage(recipientID, [1000, "Hi " + userProfile.first_name + ", Midge here, coming to get you."], function() { send.sendMozzy(recipientID);}, true);
+        send.sendMessage(recipientID, [1000, "Hi " + userProfile.first_name + ", Midge here, coming to get you."], function() { send.sendMozzie(recipientID);}, true);
         return
 
 
@@ -331,9 +337,9 @@ function zap(recipientID, userProfile, payloadTimestamp) {
         }
     );
 
-    // Find how if the user has zapped this mozzy before ...
+    // Find how if the user has zapped this mozzie before ...
 
-    db.mongo.mozzys.findAndModify(
+    db.mongo.mozzies.findAndModify(
         {
             query: { "recipient": parseInt(recipientID),
                      "time_sent": parseInt(payloadTimestamp),
@@ -346,23 +352,23 @@ function zap(recipientID, userProfile, payloadTimestamp) {
 
             if (results == null) {
 
-                // An unzapped mozzy with this payloadTimestamp doesn't exist, so find out if there is a zapped one or not and return the appropriate messge
+                // An unzapped mozzie with this payloadTimestamp doesn't exist, so find out if there is a zapped one or not and return the appropriate messge
 
-                db.mongo.mozzys.find(
+                db.mongo.mozzies.find(
                 {
                     "recipient": parseInt(recipientID),
                     "time_sent": parseInt(payloadTimestamp)
-                }, function(err, mongoMozzyResults){    
+                }, function(err, mongoMozzieResults){    
                     
                     if (err) { console.error("MongoDB error: " + err); }
                     
-                    if (mongoMozzyResults.length <= 0) {
+                    if (mongoMozzieResults.length <= 0) {
 
-                        // There is no mozzy with the payloadTimestamp specified ...
+                        // There is no mozzie with the payloadTimestamp specified ...
 
-                        send.sendMessage(recipientID, [500, "That's weird - you're trying to zap a mozzy that doesn't exist!"], null, false);
+                        send.sendMessage(recipientID, [500, "That's weird - you're trying to zap a mozzie that doesn't exist!"], null, false);
 
-                    } else if (mongoMozzyResults[0].time_zapped != null) {
+                    } else if (mongoMozzieResults[0].time_zapped != null) {
 
                         // Previously zapped ...
                         send.sendMessage(recipientID, [500, getAlreadyZappedText(userProfile)], null, false);
@@ -375,7 +381,7 @@ function zap(recipientID, userProfile, payloadTimestamp) {
 
             } else {
 
-                // Found the unzapped mozzy and marked it as zapped ...
+                // Found the unzapped mozzie and marked it as zapped ...
 
                 // Increment num_zaps for this user in the user's table and later the other zap metrics (assuming they exist already,
                 // otherwise do nothing) ...
@@ -407,65 +413,65 @@ function zap(recipientID, userProfile, payloadTimestamp) {
 
 function sendZapResponse(recipientID, userProfile, payloadTimestamp, currentTimestamp, newNumZaps) {
 
-    // Get the zapTime of the most recent mozzy
+    // Get the zapTime of the most recent mozzie
 
-    var zapTimeRecentMozzy = currentTimestamp - parseInt(payloadTimestamp);
-    var zapTimeRecentMozzyInSeconds = getZapTimeInSeconds(zapTimeRecentMozzy);
+    var zapTimeRecentMozzie = currentTimestamp - parseInt(payloadTimestamp);
+    var zapTimeRecentMozzieInSeconds = getZapTimeInSeconds(zapTimeRecentMozzie);
 
     var initialText = "";
 
-    if (zapTimeRecentMozzyInSeconds <= 0.1) {
+    if (zapTimeRecentMozzieInSeconds <= 0.1) {
         initialText = "Wow, you're a ninja - you can't zap faster than that!";
-    } else if (zapTimeRecentMozzyInSeconds <= 0.2) {
-        initialText = "Incredible speed - I can't believe how fast you zapped that mozzy!";
-    } else if (zapTimeRecentMozzyInSeconds <= 0.3) {
+    } else if (zapTimeRecentMozzieInSeconds <= 0.2) {
+        initialText = "Incredible speed - I can't believe how fast you zapped that mozzie!";
+    } else if (zapTimeRecentMozzieInSeconds <= 0.3) {
         initialText = "Woah, that was fast!  Amazing speed!";
-    } else if (zapTimeRecentMozzyInSeconds <= 0.4) {
-        initialText = "Incredibly impressive - how did you zap that mozzy so quickly!?";
-    } else if (zapTimeRecentMozzyInSeconds <= 0.5) {
+    } else if (zapTimeRecentMozzieInSeconds <= 0.4) {
+        initialText = "Incredibly impressive - how did you zap that mozzie so quickly!?";
+    } else if (zapTimeRecentMozzieInSeconds <= 0.5) {
         initialText = "Super speedy zapping - congrats!!!";
-    } else if (zapTimeRecentMozzyInSeconds <= 0.7) {
+    } else if (zapTimeRecentMozzieInSeconds <= 0.7) {
         initialText = "Impressive reflexes - I didn't expect you to zap so quickly!";
-    } else if (zapTimeRecentMozzyInSeconds <= 0.9) {
+    } else if (zapTimeRecentMozzieInSeconds <= 0.9) {
         initialText = "Wow, you zapped in under a second - very impressive!";
-    } else if (zapTimeRecentMozzyInSeconds <= 1) {
+    } else if (zapTimeRecentMozzieInSeconds <= 1) {
         initialText = "They'll be calling you super-speedy " + userProfile.first_name + " with zapping that fast!";
-    } else if (zapTimeRecentMozzyInSeconds <= 1.2) {
+    } else if (zapTimeRecentMozzieInSeconds <= 1.2) {
         initialText = "Very impressive speed!";
-    } else if (zapTimeRecentMozzyInSeconds <= 1.5) {
+    } else if (zapTimeRecentMozzieInSeconds <= 1.5) {
         initialText = "Very speedy, I'm really impressed!";
-    } else if (zapTimeRecentMozzyInSeconds <= 1.8) {
+    } else if (zapTimeRecentMozzieInSeconds <= 1.8) {
         initialText = "Boom - what a zap!  So stealthy!  I admire how you did that!";
-    } else if (zapTimeRecentMozzyInSeconds <= 2) {
-        initialText = "That mozzy didn't see you coming " + userProfile.first_name + "!";
-    } else if (zapTimeRecentMozzyInSeconds <= 2.5) {
+    } else if (zapTimeRecentMozzieInSeconds <= 2) {
+        initialText = "That mozzie didn't see you coming " + userProfile.first_name + "!";
+    } else if (zapTimeRecentMozzieInSeconds <= 2.5) {
         initialText = "Another high velocity zap - good job " + userProfile.first_name + "!";
-    } else if (zapTimeRecentMozzyInSeconds <= 3) {
+    } else if (zapTimeRecentMozzieInSeconds <= 3) {
         initialText = "Very respectable time - have you been practicing!?";
-    } else if (zapTimeRecentMozzyInSeconds <= 3.5) {
+    } else if (zapTimeRecentMozzieInSeconds <= 3.5) {
         initialText = "Pretty fast - you must be pleased with those reactions!";
-    } else if (zapTimeRecentMozzyInSeconds <= 4) {
+    } else if (zapTimeRecentMozzieInSeconds <= 4) {
         initialText = "Great effort - I'm impressed!";
-    } else if (zapTimeRecentMozzyInSeconds <= 5) {
-        initialText = "I can see you hustling to zap that mozzy - a little slow, so stay sharp for the next one!";
-    } else if (zapTimeRecentMozzyInSeconds <= 6) {
+    } else if (zapTimeRecentMozzieInSeconds <= 5) {
+        initialText = "I can see you hustling to zap that mozzie - a little slow, so stay sharp for the next one!";
+    } else if (zapTimeRecentMozzieInSeconds <= 6) {
         initialText = "Woah, it took you a little long to zap that one - be careful!!!";
-    } else if (zapTimeRecentMozzyInSeconds <= 8) {
+    } else if (zapTimeRecentMozzieInSeconds <= 8) {
         initialText = "Woah, that was dangerously close to the 10 second window " + userProfile.first_name + " - stay more alert for the next one!";
-    } else if (zapTimeRecentMozzyInSeconds <= 10) {
+    } else if (zapTimeRecentMozzieInSeconds <= 10) {
         initialText = "Aaahhh - you were JUST inside the 10 second window - you were incredibly close to getting stung and it'd be game over - be careful!";
     } else {
-        initialText = "OH NO - it took you over 10 seconds to zap that mozzy and it stung you.  You now have malaria and you'll soon be dead 😢";
+        initialText = "OH NO - it took you over 10 seconds to zap that mozzie and it stung you.  You now have malaria and you'll soon be dead 😢";
     }
 
-    sendTimeAndPointsText(initialText, zapTimeRecentMozzyInSeconds, recipientID, userProfile, newNumZaps);
+    sendTimeAndPointsText(initialText, zapTimeRecentMozzieInSeconds, recipientID, userProfile, newNumZaps);
 
 }
 
-function sendTimeAndPointsText(initialText, zapTimeRecentMozzyInSeconds, recipientID, userProfile, newNumZaps) {
+function sendTimeAndPointsText(initialText, zapTimeRecentMozzieInSeconds, recipientID, userProfile, newNumZaps) {
 
     var punctuation = "!";
-    if (zapTimeRecentMozzyInSeconds >=1) {
+    if (zapTimeRecentMozzieInSeconds >=1) {
         punctuation = ".";
     }
 
@@ -473,12 +479,12 @@ function sendTimeAndPointsText(initialText, zapTimeRecentMozzyInSeconds, recipie
 
         [
             200, initialText,
-            500, "You zapped that mozzy in " + getReadableTime(zapTimeRecentMozzyInSeconds, false),
+            500, "You zapped that mozzie in " + getReadableTime(zapTimeRecentMozzieInSeconds, false),
         ],
 
         function() {
 
-            sendGroupOfMessages(recipientID, userProfile, newNumZaps, null);
+            sendGroupOfMessages(recipientID, userProfile, newNumZaps, null, "");
 
         }
 
@@ -487,104 +493,112 @@ function sendTimeAndPointsText(initialText, zapTimeRecentMozzyInSeconds, recipie
 }
 
 
-function sendGroupOfMessages(recipientID, userProfile, newNumZaps, payload) {
+function sendGroupOfMessages(recipientID, userProfile, newNumZaps, payload, messageTextLowerCaseAlphanumericOnly) {
 
-    switch (newNumZaps) {
+    // Firstly get necessary attributes from the users table ...
 
-        case 0:
+    db.mongo.users.find({ "user": parseInt(recipientID) }, function(err, mongoUserResults){
 
+        if (err) { console.error("MongoDB error: " + err); }
+
+        var toldMore = mongoUserResults[0].told_more;
+
+        if (payload == "tell_me_more" || messageTextLowerCaseAlphanumericOnly == "tellmemore") {
+
+            // Mark this user as having been told more
+            db.mongo.users.findAndModify({
+                query: { "user": parseInt(recipientID) },
+                update: {
+                    $set: { "told_more": true }
+                },
+            },
+            function(err, results) {
+                if (err) { console.error("MongoDB error: " + err); }
+            })
+    
             send.sendMessage(recipientID,
-
+    
                 [
-                    0, "Hi " + userProfile.first_name + "!",
-                    3000, "There are Mosquitos ravaging the Messenger universe with Malaria and when one lands on your screen, make sure you tap it and zap it as fast as you can!",
-                    4500, "Get ready, there's one coming now!!! ..."
+                    1000, "Your £1.50 will be sent to the Against Malaria Foundation",
+                    3000, "They will use your £1.50 to buy a malaria net for someone in need",
+                    3000, "100% of your money goes towards buying the net",
+                    2000, "Oh, here comes a message from the CEO of the Against Malaria Foundation!! ... bear with us as we establish a connection ...",
                 ],
-        
+    
                 function() {
                     setTimeout(function() {
-                        send.sendMozzy(recipientID);
-                    }, 3000);
-                }
-            );
-
-            break;
-
-        case 1:
-
-            send.sendMessage(recipientID,
-
-                [
-                    2000, "You’re lucky! - if it took you longer than 10 seconds you’d be dead!",
-                    3000, "Did you know that in sub tropical countries, Mosquitoes can carry a blood parasite called Malaria.",
-                    3000, "Here's another, it's even more deadly.  Get ready! ..."
-                ],
-
-                function() {
-                    setTimeout(function() {
-                        send.sendMozzy(recipientID);
-                    }, 3000);
+    
+                        send.sendVideo(recipientID, "https://www.projectedgames.com/amf/video2_small.mp4",
+                        
+                        function() {
+    
+                            send.sendMessage(recipientID,
+    
+                                [
+                                    10000, "Once the video arrives, just press play to watch it!"
+                                ],
+                
+                                function() {
+                                    setTimeout(function() {
+                                        send.sendQuickReplies(
+                                            recipientID,
+                                            "Are you ready to buy a malaria net and make an enormous difference in someone’s life?",
+                                            "Yes", "yes",
+                                            "Not yet", "not_yet");
+                                    }, 20000);
+                                }
+                        
+                            );
+    
+                        });
+                    }, 50);
                 }
         
             );
+    
+        } else if (payload == "yes" || messageTextLowerCaseAlphanumericOnly == "yes") {
+    
+            send.sendMessage(recipientID,
+    
+                [
+                    1000, "That’s fantastic!",
+                    1500, "Thank you so much!",
+                    1500, "You’re amazing!",
+                    1500, "Ok, this step shouldn’t take more than a minute ...",
+                    3000, "You just need to grab your credit or debit card ...",
+                    3000, "Then tap the button below and type in your email and card details",
+                ],
+    
+                function() {
+                    setTimeout(function() {
+    
+                        send.sendPayButton(
+                            recipientID,
+                            "Ready to make a massive difference in someone’s life? ...",
+                            "https://www.projectedgames.com/amf/amf_payment.html",
+                            "Buy a net for £1.50",
+                            null);
+                    }, 2000);
+                }
+        
+            );
+    
+        } else if (payload == "not_yet" || payload == "not_now" ||
+                   messageTextLowerCaseAlphanumericOnly == "notyet" ||
+                   messageTextLowerCaseAlphanumericOnly == "notnow") {
 
-            break; 
-
-        case 2:
-
-            if (payload == "yes") {
+            if (newNumZaps < 6) {
 
                 send.sendMessage(recipientID,
-
-                    [
-                        2000, "Great! ... Did you know it’s super easy to prevent? A mosquito net can keep one person safe for three years!",
-                        3500, "These mosquitoes will keep coming at you unless you protect yourself!!!",
-                    ],
     
+                    [
+                        1000, "Ok",
+                        1000, "But these mozzies will keep coming at you until you buy a net!! ..."
+                    ],
+        
                     function() {
                         setTimeout(function() {
-                            send.sendQuickReplies(
-                                recipientID,
-                                "Do you want to buy a net now for £1.50?",
-                                "Yes", "yes2",
-                                "No", "no2");
-                        }, 3500);
-                    }
-            
-                );
-
-            } else if (payload == "no") {
-
-                send.sendMessage(recipientID,
-
-                    [
-                        2000, "Malaria is an often deadly fever which can leave an infected person with brain damage and respiratory issues.",
-                        3000, "It kills half a million people every year!",
-                    ],
-    
-                    function() {
-                        setTimeout(function() {
-                            send.sendMozzy(recipientID);
-                        }, 3000);
-                    }
-            
-                );
-
-            } else if (payload == "yes2") {
-
-                congratsAfterBuyingNet(recipientID, userProfile);
-
-            } else if (payload == "no2") {
-
-                send.sendMessage(recipientID,
-
-                    [
-                        2000, "Keep zapping then, you’re going to be here a while!"
-                    ],
-    
-                    function() {
-                        setTimeout(function() {
-                            send.sendMozzy(recipientID);
+                            send.sendMozzie(recipientID);
                         }, 3000);
                     }
             
@@ -593,208 +607,415 @@ function sendGroupOfMessages(recipientID, userProfile, newNumZaps, payload) {
             } else {
 
                 send.sendMessage(recipientID,
-
-                    [
-                        4500, "You’ve got it!"
-                    ],
     
+                    randomChoice([
+                        [1000, "Keep zapping then - you’re gonna be here a while!"],
+                        [1000, "Really!? … you’re taking a massive risk!", 2500, "These mosquitoes will keep coming at you and you'll have to zap them quickly to avoid contracting malaria! ..."],
+                        [1000, "You’ve gotta be kidding!! ... It's only £1.50 and this torturous stream of killer mosquitos will come to an end!", 3500, "Well, you’re the one choosing to live on the edge ..."],
+                        [1000, "You can’t zap forever! ... you’ll need to buy a net eventually ..."],
+                        [1000, "What if you get distracted and don’t zap fast enough!?", 3000, "It’s just not worth the risk!! ..."]
+                    ]),
+        
                     function() {
                         setTimeout(function() {
-                            send.sendQuickReplies(
-                                recipientID,
-                                "Do you know what Malaria is?",
-                                "Yes", "yes",
-                                "No", "no");
-                        }, 3000);
-                    }
-            
-                );
-
-            }
-
-            break; 
-
-        case 3:
-
-            if (payload == "yes") {
-
-                congratsAfterBuyingNet(recipientID, userProfile)
-
-            } else if (payload == "no") {
-
-                send.sendMessage(recipientID,
-
-                    [
-                        2000, "Really!? ... you're taking a massive risk!  These mosquitoes will keep coming at you and you'll have to zap them quickly to avoid contracting malaria! ..."
-                    ],
-    
-                    function() {
-                        setTimeout(function() {
-                            send.sendMozzy(recipientID);
-                        }, 5000);
-                    }
-            
-                );
-
-            } else {
-
-                send.sendMessage(recipientID,
-
-                    [
-                        2000, "Did you know that an insecticide-treated bed net only costs £1.50 and protects two people for three whole years!?",
-                        3500, "If you buy a net now, these mozzys will stop coming at you!!",
-                    ],
-    
-                    function() {
-                        setTimeout(function() {
-                            send.sendQuickReplies(
-                                recipientID,
-                                "Do you want to buy a net now for £1.50?",
-                                "Yes", "yes",
-                                "No", "no");
-                        }, 3500);
-                    }
-            
-                );
-
-            }
-
-            break;
-            
-        case 4:
-
-            if (payload == "yes") {
-
-                congratsAfterBuyingNet(recipientID, userProfile)
-
-            } else if (payload == "no") {
-
-                send.sendMessage(recipientID,
-
-                    [
-                        2000, "You gotta be kidding!! ... It's only £1.50 and this torturous stream of killer mosquitos will come to an end!",
-                        3500, "Well, you're the one choosing to live on the edge ...",
-                    ],
-    
-                    function() {
-                        setTimeout(function() {
-                            send.sendMozzy(recipientID);
-                        }, 3000);
-                    }
-            
-                );
-
-            } else {
-
-                send.sendMessage(recipientID,
-
-                    [
-                        2000, "Here's the deadly sound a mosquito makes as it comes near you at night, ready to infect you with malaria ...",
-                    ],
-    
-                    function() {
-                        setTimeout(function() {
-
-                            send.sendAudio(recipientID, "http://www.projectedgames.com/amf/mozzy-sound.m4a",
-                            
-                            function() {
-
-                                send.sendMessage(recipientID,
-
-                                    [
-                                        8000, "If you buy a malaria net, you'll not only protect yourself, but you'll also protect a real person in Africa from real malaria-infected mosquitoes!!!",
-                                    ],
-                    
-                                    function() {
-                                        setTimeout(function() {
-                                            send.sendQuickReplies(
-                                                recipientID,
-                                                "Are you ready to buy a net yet for just £1.50!?",
-                                                "Yes", "yes",
-                                                "No", "no");
-                                        }, 4000);
-                                    }
-                            
-                                );
-
-                            });
-                        }, 4000);
-                    }
-            
-                );
-            }
-
-            break;
-
-        case 5:
-
-            if (payload == "yes") {
-
-                congratsAfterBuyingNet(recipientID, userProfile)
-
-            } else if (payload == "no") {
-
-                send.sendMessage(recipientID,
-
-                    [
-                        2000, "Wow - I have no words ...",
-                    ],
-    
-                    function() {
-                        setTimeout(function() {
-                            send.sendMozzy(recipientID);
-                        }, 2000);
-                    }
-            
-                );
-
-            } else {
-
-                send.sendMessage(recipientID,
-
-                    [
-                        2000, "Here's a video from someone important ...",
-                    ],
-    
-                    function() {
-                        setTimeout(function() {
-
-                            send.sendVideo(recipientID, "https://www.projectedgames.com/amf/mozzy-video2.mp4",
-                            
-                            function() {
-
-                                send.sendMessage(recipientID,
-
-                                    [
-                                        20000, "Buy a malaria net today to stop this madness and get your life back! ...",
-                                        3500, "You'll also protect two real people in Africa who are actually surrounded by real killer mosquitos every night!!!",
-                                    ],
-                    
-                                    function() {
-                                        setTimeout(function() {
-                                            send.sendQuickReplies(
-                                                recipientID,
-                                                "Will you buy a net for £1.50?  Please!!??",
-                                                "Yes", "yes",
-                                                "No", "no");
-                                        }, 4000);
-                                    }
-                            
-                                );
-
-                            });
+                            send.sendMozzie(recipientID);
                         }, 4000);
                     }
             
                 );
 
             }
+    
+        } else {
+    
+            switch (newNumZaps) {
+    
+                case 0:
+    
+                    send.sendMessage(recipientID,
+    
+                        [
+                            0, "Hi " + userProfile.first_name + "!",
+                            3000, "There are Mosquitos ravaging the Messenger universe with Malaria and when one lands on your screen, make sure you tap it and zap it as fast as you can!",
+                            4500, "Get ready, there's one coming now!!! ..."
+                        ],
+                
+                        function() {
+                            setTimeout(function() {
+                                send.sendMozzie(recipientID);
+                            }, 3000);
+                        }
+                    );
+    
+                    break;
+    
+                case 1:
+    
+                    send.sendMessage(recipientID,
+    
+                        [
+                            2000, "You’re lucky! - if it took you longer than 10 seconds you’d be dead!",
+                            3000, "Did you know that in sub tropical countries, Mosquitoes can carry a blood parasite called Malaria.",
+                            3000, "Here's another, it's even more deadly.  Get ready! ..."
+                        ],
+    
+                        function() {
+                            setTimeout(function() {
+                                send.sendMozzie(recipientID);
+                            }, 3000);
+                        }
+                
+                    );
+    
+                    break; 
+    
+                case 2:
+    
+                    send.sendMessage(recipientID,
+    
+                        [
+                            2000, "Great zapping so far!!",
+                            1500, "Malaria is an often deadly fever which can leave an infected person with brain damage and respiratory issues.",
+                            4500, "It kills half a million people every year!"
+                        ],
+    
+                        function() {
+                            setTimeout(function() {
+                                send.sendMozzie(recipientID);
+                            }, 3000);
+                        }
+                
+                    );
+    
+                    break; 
+    
+                case 3:
+    
+                    send.sendMessage(recipientID,
+    
+                        [
+                            2000, "The crazy thing about malaria is that it’s entirely preventable!",
+                            3000, "That’s why you and your friends have probably never had it.",
+                            3000, "But about 1 in 5 people in sub saharan Africa are infected with malaria!"
+                        ],
+    
+                        function() {
+                            setTimeout(function() {
+                                send.sendMozzie(recipientID);
+                            }, 5500);
+                        }
+                
+                    );
+    
+                    break; 
+                    
+                case 4:
+    
+                    send.sendMessage(recipientID,
+    
+                        [
+                            2000, "Malaria nets protect people from mosquitoes at night",
+                            2500, "They’re the most effective way of preventing malaria because mosquitoes usually bite between 10pm and 2am",
+                            5000, "Imagine sleeping in a room with a malaria-infected mosquito and not having the protection of a net - terrifying right!?"
+                        ],
+    
+                        function() {
+                            setTimeout(function() {
+                                send.sendMozzie(recipientID);
+                            }, 6000);
+                        }
+                
+                    );
+    
+                    break;
+    
+                case 5:
+    
+                    send.sendMessage(recipientID,
+    
+                        [
+                            2000, "Here's the deadly sound a mosquito makes as it comes near you at night, ready to infect you with malaria ...",
+                        ],
+    
+                        function() {
+                            setTimeout(function() {
+    
+                                send.sendAudio(recipientID, "http://www.projectedgames.com/amf/mozzie-sound.m4a",
+                                
+                                function() {
+    
+                                    send.sendMessage(recipientID,
+    
+                                        [
+                                            3000, "Just press play to hear the sound",
+                                            8000, "A single malaria net usually protects two people for three whole years!",
+                                            3500, "And the most amazing thing is they only cost £1.50 each!",
+                                            3000, "If you buy a net now, not only will you protect two people, but these mozzies will also stop coming at you too!!",
+                                        ],
+                        
+                                        function() {
+                                            setTimeout(function() {
+                                                send.sendQuickReplies(
+                                                    recipientID,
+                                                    "Do you want to buy a net for £1.50?",
+                                                    "Tell me more", "tell_me_more",
+                                                    "Not now", "not_now");
+                                            }, 4000);
+                                        }
+                                
+                                    );
+    
+                                });
+                            }, 50);
+                        }
+                
+                    );
+    
+                    break;
+    
+                case 6:
+    
+                    send.sendMessage(recipientID,
+    
+                        [
+                            2000, "Someone important wants to share a message with you!! ... bear with us as we establish a connection ...",
+                        ],
+        
+                        function() {
 
-            break; 
+                            setTimeout(function() {
+    
+                                send.sendVideo(recipientID, "https://www.projectedgames.com/amf/video1_small.mp4",
+                                
+                                function() {
+    
+                                    send.sendMessage(recipientID,
+    
+                                        [
+                                            10000, "Once the video arrives, just press play to watch it!",
+                                            20000, "Buy a malaria net now to stop this madness and get your life back!",
+                                            3500, "You’ll also protect two real people in Africa who are actually surrounded by killer mosquitoes every night!!!"
+                                        ],
+                        
+                                        function() {
+
+                                            showBuyNetQuickReplies(recipientID, toldMore, 5000, "Do you want to buy a net for £1.50?");
+
+                                        }
+                                
+                                    );
+    
+                                });
+
+                            }, 50);
+                        }
+                
+                    );
+    
+                    break; 
+
+                case 7:
+    
+                    send.sendMessage(recipientID,
+    
+                        [
+                            2000, "400 million people fall ill with malaria every year!",
+                            2500, "But before bed nets, the situation was three times worse!",
+                            3000, "Let’s get more bed nets to people who need them to put an end to this tragic disease!"
+                        ],
+    
+                        function() {
+
+                            showBuyNetQuickReplies(recipientID, toldMore, 4000, "Will you buy a net for £1.50?");
+
+                        }
+                
+                    );
+    
+                    break;
+
+                case 8:
+    
+                    send.sendMessage(recipientID,
+    
+                        [
+                            2000, "Each bed net that is bought has a massive economic impact too!",
+                            3000, "Every £1.50 spent on malaria results in £18 improvement in the African economy!",
+                            4000, "What a crazy return on investment right!?"
+                        ],
+    
+                        function() {
+
+                            showBuyNetQuickReplies(recipientID, toldMore, 4000, "Will you buy a net for £1.50?");
+
+                        }
+                
+                    );
+    
+                    break;
+
+                case 9:
+    
+                    send.sendMessage(recipientID,
+    
+                        [
+                            2000, "The total funding gap for bed nets for 2018 - 2020 appears to be hundreds of millions of pounds!",
+                            4500, "So this is an enormous funding need!",
+                            2000, "That means someone won’t be sleeping under a net unless you buy one!"
+                        ],
+    
+                        function() {
+
+                            showBuyNetQuickReplies(recipientID, toldMore, 3500, "Will you buy a net for £1.50?");
+
+                        }
+                
+                    );
+    
+                    break;
+
+                case 10:
+    
+                    send.sendMessage(recipientID,
+    
+                        [
+                            2000, "What’s most devastating is that children are most vulnerable",
+                            3000, "A child under the age of 5 dies every two minutes in Africa from Malaria",
+                            3500, "For every 100 - 1,000 nets we put over heads and beds, one child doesn't die",
+                            3000, "Every net matters!"
+                        ],
+    
+                        function() {
+
+                            showBuyNetQuickReplies(recipientID, toldMore, 1500, "Will you buy a net for £1.50?");
+
+                        }
+                
+                    );
+    
+                    break;
+
+                case 11:
+
+                    showBuyNetQuickReplies(recipientID, toldMore, 1500, "Are you ready to stop this mad onslaught of killer mozzies by buying a mosquito net for £1.50?");
+
+                    break;
+
+                default:
+
+                    var randomNumber = Math.floor(Math.random() * 5) + 1;
+                    
+                    switch (randomNumber) {
+                        
+                        case 1:
+
+                            send.sendMessage(recipientID,
+            
+                                [
+                                    2000, "You must love this zapping business",
+                                    1500, "If you like this zapping game so much, you should try this whack-a-mole game! ..."
+                                ],
+        
+                                function() {
+        
+                                    setTimeout(function() {
+
+                                        send.sendGenericTemplate(
+            
+                                            recipientID,
+                                            "How fast can you whack a mole!?!",
+                                            "http://www.projectedgames.com/whack/images/mole.png",
+                                            "Play this fun game by whacking moles as fast as you can!",
+                                            "https://m.me/whackamolebot",
+                                            "Play Now!",
+            
+                                            function() {
+            
+                                                send.sendMessage(recipientID,
+                
+                                                    [
+                                                        4000, "You can buy a net for £1.50 to protect someone from malaria",
+                                                        3000, "And even though mosquitoes will stop here, you can still play a fun tapping game!"
+                                                    ],
+                                
+                                                    function() {
+                            
+                                                        showBuyNetQuickReplies(recipientID, toldMore, 1500, "Do you want to buy a net for £1.50?");
+                            
+                                                    }
+                                            
+                                                );
+                    
+                                        });
+
+                                    }, 3500);
+        
+                                }
+                        
+                            );
+
+                            break;
+
+                        case 2:
+
+                            send.sendMessage(recipientID,
+        
+                                [
+                                    2000, "You know, if you buy a net for £1.50, you’ll unlock a whole other game to play!"
+                                ],
+            
+                                function() {
+        
+                                    showBuyNetQuickReplies(recipientID, toldMore, 3000, "Do you want to buy a net for £1.50?");
+        
+                                }
+                        
+                            );
+
+                            break;
+
+                        default:
+
+                            showBuyNetQuickReplies(recipientID, toldMore, 3000, "Do you want to buy a net for £1.50?");
+
+                            break;
+
+                    }
+
+                    break;
+    
+            }
+    
+        }
+
+    });
+
+}
+
+
+function showBuyNetQuickReplies(recipientID, toldMore, timeInMillisecondsToShow, ask) {
+
+    if (toldMore == false) {
+
+        setTimeout(function() {
+            send.sendQuickReplies(
+                recipientID,
+                ask,
+                "Tell Me More", "tell_me_more",
+                "Not now", "not_now");
+        }, timeInMillisecondsToShow);
+
+    } else {
+
+        setTimeout(function() {
+            send.sendQuickReplies(
+                recipientID,
+                ask,
+                "Yes", "yes",
+                "Not yet", "not_yet");
+        }, timeInMillisecondsToShow);
 
     }
-
-
 
 }
 
@@ -1312,16 +1533,16 @@ function getAlreadyZappedText(userProfile) {
             text = "Hey - it looks like you've already zapped this one!";
             break;
         case 2:
-            text = "Nice try " + userProfile.first_name + "!  You can't zap a zapped mozzy!";
+            text = "Nice try " + userProfile.first_name + "!  You can't zap a zapped mozzie!";
             break;
         case 3:
-            text = "You're welcome to zap a mozzy as many times as you want, but it won't matter as it's already dead!";
+            text = "You're welcome to zap a mozzie as many times as you want, but it won't matter as it's already dead!";
             break;
         case 4:
-            text = "What have you got against this mozzy that you have to keep zapping him!?";
+            text = "What have you got against this mozzie that you have to keep zapping him!?";
             break;
         case 5:
-            text = "You really are on a zapping frenzy!  You'll have to wait for the next mozzy for the zap to count!";
+            text = "You really are on a zapping frenzy!  You'll have to wait for the next mozzie for the zap to count!";
             break;
             
     }
@@ -1374,12 +1595,19 @@ function randomChoice(array) {
     return array[Math.floor(Math.random() * array.length)]
 }
 
+function arrayContains(needle, arrhaystack) {
+
+    return (arrhaystack.indexOf(needle) > -1);
+}
+
 module.exports = {
   processMessage,
   processAttachment,
   processUnknownInput,
   sendIntroText,
   zap,
-  sendGroupOfMessages
+  sendGroupOfMessages,
+  quickReplyMessages,
+  arrayContains
 }
 
