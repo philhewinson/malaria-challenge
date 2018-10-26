@@ -686,7 +686,7 @@ function receivedPostback(event, userProfile) {
             // TO IMPLEMENT ...
             // viewScore(senderID, false, true, null);
         } else if (payload == "Invite Friends") {
-            share(senderID);
+            send.share(senderID);
         }
 
     });

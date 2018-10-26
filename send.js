@@ -484,7 +484,7 @@ function share(recipientID) {
 
 function sendShareInvitationButton(recipientID) {
     
-    var subtitle = "Try out the Malaria Challenge!"
+    var subtitle = "Try out Zap a Mozzie!"
     
     var data = {
         recipient: {
@@ -499,7 +499,7 @@ function sendShareInvitationButton(recipientID) {
                     elements: [{     
                         title: "Challenge Your Friends!",
                         subtitle: "Climb the global leaderboard when your friends and their friends buy malaria nets!",
-                        image_url: "http://www.projectedgames.com/amf/amf_logo.png",
+                        image_url: "http://www.projectedgames.com/amf/zap-a-mozzie.png",
                         buttons: [{
                             type: "element_share",
                             share_contents: { 
@@ -510,7 +510,7 @@ function sendShareInvitationButton(recipientID) {
                                         elements: [{
                                             title: "Let's protect people from Malaria together!",
                                             subtitle: subtitle,
-                                            image_url: "http://www.projectedgames.com/amf/amf_logo.png",
+                                            image_url: "http://www.projectedgames.com/amf/zap-a-mozzie.png",
                                             default_action: {
                                                 type: "web_url",
                                                 url: "http://m.me/" + BOT_PAGE_ALIAS + "?ref=invite_" + recipientID
